@@ -22,5 +22,13 @@ public class YourService extends KiboRpcService {
         // write your plan 3 here
     }
 
+    protected void HandleQRCode(){
+
+    }
+
+    protected void HandleTarget(){
+        
+    }
+
 }
 
