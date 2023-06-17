@@ -16,6 +16,7 @@ public class YourService extends KiboRpcService {
     @Override
     protected void runPlan1() {
         // write your plan 1 here
+        handleTarget();
     }
 
     @Override
@@ -41,10 +42,13 @@ public class YourService extends KiboRpcService {
         point = new Point(11.2746d, -9.92284d, 5.2988d);
         quaternion = new Quaternion(0.0f, 0.0f, -0.707f, 0.707f);
         api.moveTo(point, quaternion, true);
+
         api.laserControl(true);
         api.takeTargetSnapshot(1);
+        
         quaternion = new Quaternion(0.707f, 0.0f, 0.0f, 0.707f);
         api.moveTo(point, quaternion, true);
+
         api.laserControl(true);
         api.takeTargetSnapshot(1);
         api.reportMissionCompletion("Mission Complete!");
