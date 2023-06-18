@@ -5,23 +5,18 @@ import gov.nasa.arc.astrobee.types.Point;
 import gov.nasa.arc.astrobee.types.Quaternion;
 import android.util.Log;
 
+import org.opencv.core.Mat;
+
 /**
  * Class meant to handle commands from the Ground Data System and execute them
  * in Astrobee
  */
 
 public class YourService extends KiboRpcService {
-    private QRCode qrCode;
-    private Target target;
+    private int count = 0;
 
     private static final int LOOP_LIMIT = 5;
     private final String TAG = this.getClass().getSimpleName();
-
-    public YourService() {
-        super();
-        qrCode = new QRCode();
-        target = new Target();
-    }
 
     private void goToPoint1() {
         // avoid KOZ
@@ -52,11 +47,11 @@ public class YourService extends KiboRpcService {
 
         goToPoint1();
 
-        target.handleTarget(1);
+        handleTarget(1);
 
         turnToTarget();
 
-        target.handleTarget(1);
+        handleTarget(1);
 
         api.reportMissionCompletion("Mission Complete!");
     }
@@ -69,5 +64,13 @@ public class YourService extends KiboRpcService {
     @Override
     protected void runPlan3() {
         // write your plan 3 here
+    }
+
+    private void handleTarget(int targetNumber) {
+        api.laserControl(true);
+        api.takeTargetSnapshot(targetNumber);
+        Mat image = api.getMatNavCam();
+        api.saveMatImage(image, "target " + targetNumber + "-" + count + ".png");
+        count++;
     }
 }
