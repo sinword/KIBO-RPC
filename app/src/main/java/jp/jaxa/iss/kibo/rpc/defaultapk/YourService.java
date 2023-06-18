@@ -11,11 +11,17 @@ import android.util.Log;
  */
 
 public class YourService extends KiboRpcService {
-    private QRCode qrCode = new QRCode(api);
-    private Target target = new Target(api);
+    private QRCode qrCode;
+    private Target target;
 
     private static final int LOOP_LIMIT = 5;
     private final String TAG = this.getClass().getSimpleName();
+
+    public YourService() {
+        super();
+        qrCode = new QRCode();
+        target = new Target();
+    }
 
     private void goToPoint1() {
         // avoid KOZ
