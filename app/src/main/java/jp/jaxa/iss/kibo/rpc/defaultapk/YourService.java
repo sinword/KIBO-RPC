@@ -1,11 +1,9 @@
 package jp.jaxa.iss.kibo.rpc.defaultapk;
 
-import org.opencv.core.Mat;
-
-import jp.jaxa.iss.kibo.rpc.api.KiboRpcApi;
 import jp.jaxa.iss.kibo.rpc.api.KiboRpcService;
 import gov.nasa.arc.astrobee.types.Point;
 import gov.nasa.arc.astrobee.types.Quaternion;
+import android.util.Log;
 
 /**
  * Class meant to handle commands from the Ground Data System and execute them
@@ -17,6 +15,7 @@ public class YourService extends KiboRpcService {
     private Target target = new Target(api);
 
     private static final int LOOP_LIMIT = 5;
+    private final String TAG = this.getClass().getSimpleName();
 
     private void goToPoint1() {
         // avoid KOZ
@@ -35,8 +34,16 @@ public class YourService extends KiboRpcService {
         api.moveTo(point, quaternion, true);
     }
 
+    private void start() {
+        Log.i(TAG, "start mission");
+        // the mission starts
+        api.startMission();
+    }
+
     @Override
     protected void runPlan1() {
+        start();
+
         goToPoint1();
 
         target.handleTarget(1);
