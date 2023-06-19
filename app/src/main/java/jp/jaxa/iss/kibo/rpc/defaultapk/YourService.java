@@ -18,6 +18,7 @@ import org.opencv.core.Point3;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -30,37 +31,70 @@ public class YourService extends KiboRpcService {
     private final String TAG = this.getClass().getSimpleName();
 
     // relative to robot body
-    private static final float[] NAV_CAM_POSITION = new float[] { 0.1177f, -0.0422f, -0.0826f };
-    private static final float[] LASER_POSITION = new float[] { 0.1302f, 0.0572f, -0.1111f };
-    private int[] count = { 0, 0, 0, 0, 0, 0, 0 };
+    private static final float[] NAV_CAM_POSITION = new float[] { 0.1177f,
+            -0.0422f, -0.0826f };
+    private static final float[] LASER_POSITION = new float[] { 0.1302f, 0.0572f,
+            -0.1111f };
+    private int[] count = new int[] { 0, 0, 0, 0, 0, 0, 0 };
+    private static final float MARKER_LENGTH = 0.05f;
 
-    private float markerLength = 0.05f;
-    private MatOfPoint3 objPoints = new MatOfPoint3(
-            new Point3(-markerLength / 2.0f, markerLength / 2.0f, 0),
-            new Point3(markerLength / 2.0f, markerLength / 2.0f, 0),
-            new Point3(markerLength / 2.0f, -markerLength / 2.0f, 0),
-            new Point3(-markerLength / 2.0f, -markerLength / 2.0f, 0));
-    private Mat navCamMatrix = new Mat(3, 3, CvType.CV_32FC1);
-    private MatOfDouble distCoeffs;
-    private Dictionary arucoDict = Aruco.getPredefinedDictionary(Aruco.DICT_5X5_250);
+    @Override
+    protected void runPlan1() {
+        Log.i(TAG, "Running plan 1");
 
-    private void initCameraMatrix() {
+        MatOfPoint3 objPoints = new MatOfPoint3(
+                new Point3(-MARKER_LENGTH / 2.0f, MARKER_LENGTH / 2.0f, 0f),
+                new Point3(MARKER_LENGTH / 2.0f, MARKER_LENGTH / 2.0f, 0f),
+                new Point3(MARKER_LENGTH / 2.0f, -MARKER_LENGTH / 2.0f, 0f),
+                new Point3(-MARKER_LENGTH / 2.0f, -MARKER_LENGTH / 2.0f, 0f));
+        Mat navCamMatrix = new Mat(3, 3, CvType.CV_32FC1);
+        MatOfDouble distCoeffs = new MatOfDouble();
+        Dictionary arucoDict = Aruco.getPredefinedDictionary(Aruco.DICT_5X5_250);
+
+        init(navCamMatrix, distCoeffs);
+
+        Log.i(TAG, "finish init");
+
+        start();
+
+        goToPoint1();
+
+        handleTarget(1, navCamMatrix, distCoeffs, arucoDict, objPoints);
+
+        api.reportMissionCompletion("Mission Complete!");
+    }
+
+    @Override
+    protected void runPlan2() {
+        Log.i(TAG, "Running plan 2");
+        runPlan1();
+    }
+
+    @Override
+    protected void runPlan3() {
+        Log.i(TAG, "Running plan 3");
+        runPlan1();
+    }
+
+    private void initCameraMatrix(Mat navCamMatrix) {
         double[][] simData = { { 523.105750, 0.000000, 635.434258 },
                 { 0.000000, 534.765913, 500.335102 },
                 { 0.000000, 0.000000, 1.000000 } };
-        navCamMatrix.put(0, 0, simData[0]);
-        navCamMatrix.put(1, 0, simData[1]);
-        navCamMatrix.put(2, 0, simData[2]);
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                navCamMatrix.put(i, j, simData[i][j]);
+            }
+        }
     }
 
-    private void initDistCoeffs() {
+    private void initDistCoeffs(MatOfDouble distCoeffs) {
         double[] simData = { -0.164787, 0.020375, -0.001572, -0.000369, 0.000000 };
         distCoeffs.put(0, 0, simData);
     }
 
-    private void init() {
-        initCameraMatrix();
-        initDistCoeffs();
+    private void init(Mat navCamMatrix, MatOfDouble distCoeffs) {
+        initCameraMatrix(navCamMatrix);
+        initDistCoeffs(distCoeffs);
     }
 
     private void goToPoint1() {
@@ -74,44 +108,16 @@ public class YourService extends KiboRpcService {
         api.moveTo(point, quaternion, true);
     }
 
-    private void turnToTarget() {
-        Point point = new Point(11.2746d, -9.92284d, 5.2988d);
-        Quaternion quaternion = new Quaternion(0.707f, 0.0f, 0.0f, 0.707f);
-        api.moveTo(point, quaternion, true);
-    }
-
     private void start() {
         Log.i(TAG, "start mission");
         // the mission starts
         api.startMission();
     }
 
-    @Override
-    protected void runPlan1() {
-        init();
-
-        start();
-
-        goToPoint1();
-
-        handleTarget(1);
-
-        api.reportMissionCompletion("Mission Complete!");
-    }
-
-    @Override
-    protected void runPlan2() {
-        // write your plan 2 here
-    }
-
-    @Override
-    protected void runPlan3() {
-        // write your plan 3 here
-    }
-
-    private void calibrateLocation(int targetNumber) {
+    private void calibrateLocation(int targetNumber, Mat navCamMatrix,
+            MatOfDouble distCoeffs, Dictionary arucoDict, MatOfPoint3 objPoints) {
         Mat image = api.getMatNavCam();
-        List<Mat> corners = null;
+        List<Mat> corners = new ArrayList<>();
         Mat ids = new Mat();
         Aruco.detectMarkers(image, arucoDict, corners, ids);
         Aruco.drawDetectedMarkers(image, corners, ids);
@@ -122,18 +128,22 @@ public class YourService extends KiboRpcService {
 
         Mat rvecs = new Mat();
         Mat tvecs = new Mat();
-        Aruco.estimatePoseSingleMarkers(corners, markerLength, navCamMatrix, distCoeffs, rvecs, tvecs);
+        Aruco.estimatePoseSingleMarkers(corners, MARKER_LENGTH, navCamMatrix,
+                distCoeffs, rvecs, tvecs);
         Aruco.drawAxis(image, navCamMatrix, distCoeffs, rvecs, tvecs, 0.1f);
 
-        api.saveMatImage(image, "target_" + targetNumber + "_" + count[targetNumber] + ".png");
+        api.saveMatImage(image, "target_" + targetNumber + "_" + count[targetNumber]
+                + ".png");
         count[targetNumber]++;
 
         MatOfPoint2f imagePoints = new MatOfPoint2f();
-        MatOfPoint3f objPoints = new MatOfPoint3f();
-        objPoints.fromList(this.objPoints.toList());
-        Calib3d.projectPoints(objPoints, rvecs, tvecs, navCamMatrix, distCoeffs, imagePoints);
-        for (org.opencv.core.Point point: imagePoints.toList()) {
-            Imgproc.drawMarker(image, point, new Scalar(0, 255, 0), Imgproc.MARKER_CROSS);
+        MatOfPoint3f objPoints2 = new MatOfPoint3f();
+        objPoints2.fromList(objPoints.toList());
+        Calib3d.projectPoints(objPoints2, rvecs, tvecs, navCamMatrix, distCoeffs,
+                imagePoints);
+        for (org.opencv.core.Point point : imagePoints.toList()) {
+            Imgproc.drawMarker(image, point, new Scalar(0, 255, 0), Imgproc.MARKER_CROSS,
+                    10, 1, Imgproc.LINE_AA);
         }
 
         Point3 targetPoint = new Point3();
@@ -144,13 +154,17 @@ public class YourService extends KiboRpcService {
         targetPointInWorld.x = targetPoint.x + NAV_CAM_POSITION[0];
         targetPointInWorld.y = targetPoint.y + NAV_CAM_POSITION[1];
         targetPointInWorld.z = targetPoint.z + NAV_CAM_POSITION[2];
-        Log.i(TAG, "target " + targetNumber + " location: " + targetPointInWorld.x + ", " + targetPointInWorld.y + ", "
+        Log.i(TAG, "target " + targetNumber + " location: " + targetPointInWorld.x +
+                ", " + targetPointInWorld.y + ", "
                 + targetPointInWorld.z);
     }
 
-    private void handleTarget(int targetNumber) {
-        calibrateLocation(targetNumber);
+    private void handleTarget(int targetNumber, Mat navCamMatrix,
+            MatOfDouble distCoeffs, Dictionary arucoDict, MatOfPoint3 objPoints) {
+        calibrateLocation(targetNumber, navCamMatrix, distCoeffs, arucoDict, objPoints);
         api.laserControl(true);
         api.takeTargetSnapshot(targetNumber);
+        Mat image = api.getMatNavCam();
+        api.saveMatImage(image, "target_" + targetNumber + "_laser.png");
     }
 }
