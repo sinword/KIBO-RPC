@@ -116,6 +116,7 @@ public class YourService extends KiboRpcService {
 
     private void calibrateLocation(int targetNumber, Mat navCamMatrix,
             MatOfDouble distCoeffs, Dictionary arucoDict, MatOfPoint3 objPoints) {
+        Log.i(TAG, "In calibrateLocation");
         Mat image = api.getMatNavCam();
         List<Mat> corners = new ArrayList<>();
         Mat ids = new Mat();
@@ -128,22 +129,14 @@ public class YourService extends KiboRpcService {
 
         Mat rvecs = new Mat();
         Mat tvecs = new Mat();
+        Log.i(TAG, "estimate markers pose");
         Aruco.estimatePoseSingleMarkers(corners, MARKER_LENGTH, navCamMatrix,
                 distCoeffs, rvecs, tvecs);
-        Aruco.drawAxis(image, navCamMatrix, distCoeffs, rvecs, tvecs, 0.1f);
-
-        api.saveMatImage(image, "target_" + targetNumber + "_" + count[targetNumber]
-                + ".png");
-        count[targetNumber]++;
-
-        MatOfPoint2f imagePoints = new MatOfPoint2f();
-        MatOfPoint3f objPoints2 = new MatOfPoint3f();
-        objPoints2.fromList(objPoints.toList());
-        Calib3d.projectPoints(objPoints2, rvecs, tvecs, navCamMatrix, distCoeffs,
-                imagePoints);
-        for (org.opencv.core.Point point : imagePoints.toList()) {
-            Imgproc.drawMarker(image, point, new Scalar(0, 255, 0), Imgproc.MARKER_CROSS,
-                    10, 1, Imgproc.LINE_AA);
+        for (int i = 0; i < corners.size(); ++i) {
+            Mat rvec = rvecs.row(i);
+            Mat tvec = tvecs.row(i);
+            Calib3d.drawFrameAxes(image, navCamMatrix, distCoeffs, rvec, tvec,
+                    MARKER_LENGTH / 2.0f);
         }
 
         Point3 targetPoint = new Point3();
@@ -157,6 +150,10 @@ public class YourService extends KiboRpcService {
         Log.i(TAG, "target " + targetNumber + " location: " + targetPointInWorld.x +
                 ", " + targetPointInWorld.y + ", "
                 + targetPointInWorld.z);
+
+        api.saveMatImage(image, "target_" + targetNumber + "_" + count[targetNumber]
+                + ".png");
+        count[targetNumber]++;
     }
 
     private void handleTarget(int targetNumber, Mat navCamMatrix,
