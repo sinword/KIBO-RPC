@@ -21,6 +21,8 @@ import org.opencv.imgproc.Imgproc;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.opencv.core.Core.gemm;
+
 /**
  * Class meant to handle commands from the Ground Data System and execute them
  * in Astrobee
@@ -76,25 +78,9 @@ public class YourService extends KiboRpcService {
         runPlan1();
     }
 
-    private void initCameraMatrix(Mat navCamMatrix) {
-        double[][] simData = { { 523.105750, 0.000000, 635.434258 },
-                { 0.000000, 534.765913, 500.335102 },
-                { 0.000000, 0.000000, 1.000000 } };
-        for (int i = 0; i < 3; ++i) {
-            for (int j = 0; j < 3; ++j) {
-                navCamMatrix.put(i, j, simData[i][j]);
-            }
-        }
-    }
-
-    private void initDistCoeffs(MatOfDouble distCoeffs) {
-        double[] simData = { -0.164787, 0.020375, -0.001572, -0.000369, 0.000000 };
-        distCoeffs.put(0, 0, simData);
-    }
-
     private void init(Mat navCamMatrix, MatOfDouble distCoeffs) {
-        initCameraMatrix(navCamMatrix);
-        initDistCoeffs(distCoeffs);
+        navCamMatrix.put(0, 0, api.getNavCamIntrinsics()[0]);
+        distCoeffs.put(0, 0, api.getNavCamIntrinsics()[1]);
     }
 
     private void goToPoint1() {
@@ -129,27 +115,61 @@ public class YourService extends KiboRpcService {
 
         Mat rvecs = new Mat();
         Mat tvecs = new Mat();
-        Log.i(TAG, "estimate markers pose");
+        Log.i(TAG, "Estimating markers pose");
         Aruco.estimatePoseSingleMarkers(corners, MARKER_LENGTH, navCamMatrix,
                 distCoeffs, rvecs, tvecs);
-        for (int i = 0; i < corners.size(); ++i) {
+
+        // Iterate over each marker and calculate its center point
+        for (int i = 0; i < ids.size().height; ++i) {
             Mat rvec = rvecs.row(i);
             Mat tvec = tvecs.row(i);
+
+            // Draw marker axes on the image
             Calib3d.drawFrameAxes(image, navCamMatrix, distCoeffs, rvec, tvec,
                     MARKER_LENGTH / 2.0f);
-        }
 
-        Point3 targetPoint = new Point3();
-        targetPoint.x = (float) tvecs.get(0, 0)[0];
-        targetPoint.y = (float) tvecs.get(0, 0)[1];
-        targetPoint.z = (float) tvecs.get(0, 0)[2];
-        Point3 targetPointInWorld = new Point3();
-        targetPointInWorld.x = targetPoint.x + NAV_CAM_POSITION[0];
-        targetPointInWorld.y = targetPoint.y + NAV_CAM_POSITION[1];
-        targetPointInWorld.z = targetPoint.z + NAV_CAM_POSITION[2];
-        Log.i(TAG, "target " + targetNumber + " location: " + targetPointInWorld.x +
-                ", " + targetPointInWorld.y + ", "
-                + targetPointInWorld.z);
+            // Convert rotation vector to rotation matrix
+            Mat rotMat = new Mat();
+            Calib3d.Rodrigues(rvec, rotMat);
+
+            // Calculate marker center point
+            Mat markerPoint = new Mat();
+            gemm(rotMat.inv(), tvec.t(), 1, new Mat(), 0, markerPoint);
+            /*
+             * error message:
+             * 06-19 12:33:25.353 I/KiboRpcApi( 1700): [Start] getMatNavCam
+             * 06-19 12:33:25.354 I/KiboRpcApi( 1700): [Finish] getMatNavCam
+             * 06-19 12:33:25.384 I/YourService( 1700): Estimating markers pose
+             * 06-19 12:33:25.385 E/cv::error()( 1700): OpenCV(3.4.4) Error: Assertion
+             * failed (type == B.type()) in void cv::gemm(cv::InputArray, cv::InputArray,
+             * double, cv::InputArray, double, cv::OutputArray, int), file
+             * /build/3_4-contrib_pack-contrib-android/opencv/modules/core/src/matmul.cpp,
+             * line 1558
+             * 06-19 12:33:25.385 E/org.opencv.core( 1700): core::gemm_11() caught
+             * cv::Exception: OpenCV(3.4.4)
+             * /build/3_4-contrib_pack-contrib-android/opencv/modules/core/src/matmul.cpp:
+             * 1558: error: (-215:Assertion failed) type == B.type() in function 'void
+             * cv::gemm(cv::InputArray, cv::InputArray, double, cv::InputArray, double,
+             * cv::OutputArray, int)'
+             * 06-19 12:33:25.385 E/KiboRpcApi( 1700): Program Down: Exception:
+             * 06-19 12:33:25.385 E/KiboRpcApi( 1700): CvException
+             * [org.opencv.core.CvException: cv::Exception: OpenCV(3.4.4)
+             * /build/3_4-contrib_pack-contrib-android/opencv/modules/core/src/matmul.cpp:
+             * 1558: error: (-215:Assertion failed) type == B.type() in function 'void
+             * cv::gemm(cv::InputArray, cv::InputArray, double, cv::InputArray, double,
+             * cv::OutputArray, int)'
+             * 06-19 12:33:25.385 E/KiboRpcApi( 1700): ]
+             * 06-19 12:33:25.385 E/KiboRpcApi( 1700): at org.opencv.core.Core.gemm_1(Native
+             * Method)
+             * 06-19 12:33:25.385 E/KiboRpcApi( 1700): at
+             * org.opencv.core.Core.gemm(Core.java:1682)
+             */
+            markerPoint = markerPoint.t();
+
+            // Log center point of marker
+            Log.i(TAG, "Marker " + ids.get(i, 0)[0] + " center point: "
+                    + markerPoint.dump());
+        }
 
         api.saveMatImage(image, "target_" + targetNumber + "_" + count[targetNumber]
                 + ".png");
