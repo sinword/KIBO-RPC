@@ -35,23 +35,23 @@ public class YourService extends KiboRpcService {
     // relative to robot body
 
     private class Config {
-        public final float[] NAV_CAM_POSITION = new float[] { 0.1177f,
+        private final float[] NAV_CAM_POSITION = new float[] { 0.1177f,
                 -0.0422f, -0.0826f };
-        public final float[] LASER_POSITION = new float[] { 0.1302f, 0.0572f,
+        private final float[] LASER_POSITION = new float[] { 0.1302f, 0.0572f,
                 -0.1111f };
-        public final float MARKER_LENGTH = 0.05f;
-        public int[] count = new int[] { 0, 0, 0, 0, 0, 0, 0 };
-        public final int LOOP_LIMIT = 5;
-        public MatOfPoint3 objPoints = new MatOfPoint3(
+        private final float MARKER_LENGTH = 0.05f;
+        private int[] count = new int[] { 0, 0, 0, 0, 0, 0, 0 };
+        private final int LOOP_LIMIT = 5;
+        private MatOfPoint3 objPoints = new MatOfPoint3(
                 new Point3(-MARKER_LENGTH / 2.0f, MARKER_LENGTH / 2.0f, 0f),
                 new Point3(MARKER_LENGTH / 2.0f, MARKER_LENGTH / 2.0f, 0f),
                 new Point3(MARKER_LENGTH / 2.0f, -MARKER_LENGTH / 2.0f, 0f),
                 new Point3(-MARKER_LENGTH / 2.0f, -MARKER_LENGTH / 2.0f, 0f));
-        public Mat navCamMatrix = new Mat(3, 3, CvType.CV_32FC1);
-        public MatOfDouble distCoeffs = new MatOfDouble();
-        public Dictionary arucoDict = Aruco.getPredefinedDictionary(Aruco.DICT_5X5_250);
+        private Mat navCamMatrix = new Mat(3, 3, CvType.CV_32FC1);
+        private MatOfDouble distCoeffs = new MatOfDouble();
+        private Dictionary arucoDict = Aruco.getPredefinedDictionary(Aruco.DICT_5X5_250);
 
-        public void init() {
+        private void init() {
             navCamMatrix.put(0, 0, api.getNavCamIntrinsics()[0]);
             distCoeffs.put(0, 0, api.getNavCamIntrinsics()[1]);
         }
@@ -70,7 +70,7 @@ public class YourService extends KiboRpcService {
 
         goToPoint1();
 
-        handleTarget(1, config);
+        handleTarget(1);
 
         api.reportMissionCompletion("Mission Complete!");
     }
@@ -104,7 +104,7 @@ public class YourService extends KiboRpcService {
         api.startMission();
     }
 
-    private void calibrateLocation(int targetNumber, Config config) {
+    private void calibrateLocation(int targetNumber) {
         Log.i(TAG, "In calibrateLocation");
         Mat image = api.getMatNavCam();
         List<Mat> corners = new ArrayList<>();
@@ -158,8 +158,8 @@ public class YourService extends KiboRpcService {
         config.count[targetNumber]++;
     }
 
-    private void handleTarget(int targetNumber, Config config) {
-        calibrateLocation(targetNumber, config);
+    private void handleTarget(int targetNumber) {
+        calibrateLocation(targetNumber);
         api.laserControl(true);
         api.takeTargetSnapshot(targetNumber);
         Mat image = api.getMatNavCam();
