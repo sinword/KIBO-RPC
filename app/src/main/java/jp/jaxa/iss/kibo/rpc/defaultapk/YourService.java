@@ -57,6 +57,51 @@ public class YourService extends KiboRpcService {
         }
     }
 
+    private class Estimation {
+        private Mat ids;
+        private Mat tvecs;
+
+        private void inputData(Mat ids, Mat tvecs) {
+            this.ids = ids;
+            this.tvecs = tvecs;
+        }
+
+        private Point3 getEstimatedPos() {
+            Point3 pos = new Point3(0, 0, 0);
+
+            for (int i = 0; i < tvecs.rows(); i++) {
+                int id = (int) ids.get(i, 0)[0];
+                pos.x += tvecs.get(i, 0)[0];
+                pos.y += tvecs.get(i, 1)[0];
+                pos.z += tvecs.get(i, 2)[0];
+                switch (id % 4) {
+                    case 0:
+                        pos.x -= 0.1f;
+                        pos.y -= 0.0375f;
+                        break;
+                    case 1:
+                        pos.x += 0.1f;
+                        pos.y -= 0.0375f;
+                        break;
+                    case 2:
+                        pos.x += 0.1f;
+                        pos.y += 0.0375f;
+                        break;
+                    case 3:
+                        pos.x -= 0.1f;
+                        pos.y += 0.0375f;
+                        break;
+                }
+            }
+
+            pos.x /= tvecs.rows();
+            pos.y /= tvecs.rows();
+            pos.z /= tvecs.rows();
+
+            return pos;
+        }
+    }
+
     @Override
     protected void runPlan1() {
         Log.i(TAG, "Running plan 1");
@@ -122,36 +167,11 @@ public class YourService extends KiboRpcService {
         Aruco.estimatePoseSingleMarkers(corners, config.MARKER_LENGTH, config.navCamMatrix,
                 config.distCoeffs, rvecs, tvecs);
 
-        // Iterate over each marker and calculate its center point
-        for (int i = 0; i < ids.size().height; ++i) {
-            Mat rvec = rvecs.row(i);
-            Mat tvec = tvecs.row(i);
+        Estimation estimation = new Estimation();
+        estimation.inputData(ids, tvecs);
+        Point3 pos = estimation.getEstimatedPos();
 
-            // Draw marker axes on the image
-            Calib3d.drawFrameAxes(image, config.navCamMatrix, config.distCoeffs, rvec, tvec,
-                    config.MARKER_LENGTH / 2.0f);
-
-            // Convert rotation vector to rotation matrix
-            Mat rotMat = new Mat();
-            Calib3d.Rodrigues(rvec, rotMat);
-
-            Log.d(TAG, "rotMat.inv(): " + rotMat.inv().dump());
-            Log.d(TAG, "tvec.t(): " + tvec.t().dump());
-            Log.d(TAG, "type of rotMat.inv(): " + rotMat.inv().type());
-            Log.d(TAG, "type of tvec.t(): " + tvec.t().type());
-            Log.d(TAG, "size of rotMat.inv(): " + rotMat.inv().size());
-            Log.d(TAG, "size of tvec.t(): " + tvec.t().size());
-
-            // Calculate marker center point
-            // Mat markerPoint = new Mat();
-            // gemm(rotMat.inv(), tvec.t(), 1, new Mat(), 0, markerPoint);
-
-            // markerPoint = markerPoint.t();
-
-            // // Log center point of marker
-            // Log.i(TAG, "Marker " + ids.get(i, 0)[0] + " center point: "
-            // + markerPoint.dump());
-        }
+        Log.d(TAG, "Relative position: " + pos.x + ", " + pos.y + ", " + pos.z);
 
         api.saveMatImage(image, "target_" + targetNumber + "_" + config.count[targetNumber]
                 + ".png");
@@ -162,7 +182,5 @@ public class YourService extends KiboRpcService {
         calibrateLocation(targetNumber);
         api.laserControl(true);
         api.takeTargetSnapshot(targetNumber);
-        Mat image = api.getMatNavCam();
-        api.saveMatImage(image, "target_" + targetNumber + "_laser.png");
     }
 }
