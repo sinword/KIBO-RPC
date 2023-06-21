@@ -97,7 +97,7 @@ public class YourService extends KiboRpcService {
                 pos.x += data[0];
                 pos.y += data[1];
                 pos.z += data[2];
-                switch (id % 4 + 1) {
+                switch (id % 4) {
                     case 1:
                         // dx = -0.1, dy = 0.0375
                         pos.x += -0.1f * rotationMatrixData[i][0][0] + 0.0375f
@@ -125,7 +125,7 @@ public class YourService extends KiboRpcService {
                         pos.z += 0.1f * rotationMatrixData[i][2][0] - 0.0375f
                                 * rotationMatrixData[i][2][1];
                         break;
-                    case 4:
+                    case 0:
                         // dx = -0.1, dy = -0.0375
                         pos.x += -0.1f * rotationMatrixData[i][0][0] - 0.0375f
                                 * rotationMatrixData[i][0][1];
