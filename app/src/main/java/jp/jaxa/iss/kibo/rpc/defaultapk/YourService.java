@@ -280,15 +280,17 @@ public class YourService extends KiboRpcService {
         Log.i(TAG, "Relative to camera: " + pos.x + ", " + pos.y + ", " + pos.z);
 
         Mat targetPoint = new Mat(3, 1, CvType.CV_64FC1);
-        targetPoint.put(0, 0, pos.z);
-        targetPoint.put(1, 0, pos.x);
-        targetPoint.put(2, 0, pos.y);
+        targetPoint.put(0, 0, pos.z + config.NAV_CAM_POSITION[0]);
+        targetPoint.put(1, 0, pos.x + config.NAV_CAM_POSITION[1]);
+        targetPoint.put(2, 0, pos.y + config.NAV_CAM_POSITION[2]);
         Mat lineDirection = new Mat(3, 1, CvType.CV_64FC1);
         lineDirection.put(0, 0, 1);
         lineDirection.put(1, 0, 0);
         lineDirection.put(2, 0, 0);
         Mat linePoint = new Mat(3, 1, CvType.CV_64FC1);
-        linePoint.put(0, 0, config.LASER_POSITION);
+        for (int i = 0; i < 3; i++) {
+            linePoint.put(i, 0, config.LASER_POSITION[i]);
+        }
         LineRotation lineRotation = new LineRotation(linePoint, lineDirection, targetPoint);
 
         Log.i(TAG, "angle: " + lineRotation.getAngleAxis()[0]);
