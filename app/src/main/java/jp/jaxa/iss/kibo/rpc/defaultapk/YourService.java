@@ -217,7 +217,7 @@ public class YourService extends KiboRpcService {
         estimation.inputData(ids, rvecs, tvecs);
         Point3 pos = estimation.getEstimatedPos();
 
-        Log.i(TAG, "Relative position: " + pos.x + ", " + pos.y + ", " + pos.z);
+        Log.i(TAG, "Relative to camera: " + pos.x + ", " + pos.y + ", " + pos.z);
 
         api.saveMatImage(image, "target_" + targetNumber + "_" + config.count[targetNumber]
                 + ".png");
