@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.opencv.core.Core.gemm;
+import static org.opencv.core.Core.norm;
+import static org.opencv.core.Core.subtract;
 
 /**
  * Class meant to handle commands from the Ground Data System and execute them
@@ -52,7 +54,7 @@ public class YourService extends KiboRpcService {
         private MatOfDouble distCoeffs = new MatOfDouble();
         private Dictionary arucoDict = Aruco.getPredefinedDictionary(Aruco.DICT_5X5_250);
 
-        private void init() {
+        private Config() {
             navCamMatrix.put(0, 0, api.getNavCamIntrinsics()[0]);
             distCoeffs.put(0, 0, api.getNavCamIntrinsics()[1]);
         }
@@ -65,7 +67,7 @@ public class YourService extends KiboRpcService {
         private Mat rotationMatrix = new Mat();
         private double[][][] rotationMatrixData;
 
-        private void inputData(Mat ids, Mat rvecs, Mat tvecs) {
+        private Estimation(Mat ids, Mat rvecs, Mat tvecs) {
             this.ids = ids;
             this.rvecs = rvecs;
             this.tvecs = tvecs;
@@ -145,12 +147,60 @@ public class YourService extends KiboRpcService {
         }
     }
 
+    private class LineRotation {
+        private Mat linePoint;
+        private Mat lineDirection;
+        private Mat targetPoint;
+
+        private LineRotation(Mat linePoint, Mat lineDirection,
+                Mat targetPoint) {
+            this.linePoint = linePoint;
+            this.lineDirection = lineDirection;
+            this.targetPoint = targetPoint;
+        }
+
+        private double[] getAngleAxis() {
+            // Calculate the rotation matrix
+            Mat rotationMatrix = new Mat();
+            Calib3d.Rodrigues(lineDirection, rotationMatrix);
+
+            // Calculate the vector from line point to target point in the rotated
+            // coordinate system
+            Mat rotatedVector = new Mat();
+            subtract(targetPoint, linePoint, rotatedVector);
+            gemm(rotationMatrix, rotatedVector, 1, new Mat(), 0, rotatedVector);
+
+            // Convert Mat to Point3
+            Point3 rotatedVectorPoint = new Point3(rotatedVector.get(0, 0)[0], rotatedVector.get(1, 0)[0],
+                    rotatedVector.get(2, 0)[0]);
+
+            // Calculate the angle and axis
+            double dotProduct = lineDirection.get(0, 0)[0] * rotatedVectorPoint.x
+                    + lineDirection.get(1, 0)[0] * rotatedVectorPoint.y
+                    + lineDirection.get(2, 0)[0] * rotatedVectorPoint.z;
+            double angle = Math.acos(dotProduct / (norm(lineDirection) * norm1(rotatedVectorPoint)));
+
+            double[] axis = new double[3];
+            axis[0] = lineDirection.get(1, 0)[0] * rotatedVectorPoint.z
+                    - lineDirection.get(2, 0)[0] * rotatedVectorPoint.y;
+            axis[1] = lineDirection.get(2, 0)[0] * rotatedVectorPoint.x
+                    - lineDirection.get(0, 0)[0] * rotatedVectorPoint.z;
+            axis[2] = lineDirection.get(0, 0)[0] * rotatedVectorPoint.y
+                    - lineDirection.get(1, 0)[0] * rotatedVectorPoint.x;
+
+            return new double[] { angle, axis[0], axis[1], axis[2] };
+        }
+
+        private double norm1(Point3 point) {
+            return Math.sqrt(point.x * point.x + point.y * point.y + point.z * point.z);
+        }
+    }
+
     @Override
     protected void runPlan1() {
         Log.i(TAG, "Running plan 1");
 
         config = new Config();
-        config.init();
 
         Log.i(TAG, "finish init");
 
@@ -213,8 +263,7 @@ public class YourService extends KiboRpcService {
         Log.i(TAG, "rvecs: " + rvecs.dump());
         Log.i(TAG, "tvecs: " + tvecs.dump());
 
-        Estimation estimation = new Estimation();
-        estimation.inputData(ids, rvecs, tvecs);
+        Estimation estimation = new Estimation(ids, rvecs, tvecs);
         Point3 pos = estimation.getEstimatedPos();
 
         Log.i(TAG, "Relative to camera: " + pos.x + ", " + pos.y + ", " + pos.z);
