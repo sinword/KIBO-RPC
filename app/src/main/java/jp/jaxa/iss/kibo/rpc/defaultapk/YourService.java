@@ -104,6 +104,8 @@ public class YourService extends KiboRpcService {
                                 * rotationMatrixData[i][0][1];
                         pos.y += -0.1f * rotationMatrixData[i][1][0] + 0.0375f
                                 * rotationMatrixData[i][1][1];
+                        pos.z += -0.1f * rotationMatrixData[i][2][0] + 0.0375f
+                                * rotationMatrixData[i][2][1];
                         break;
                     case 2:
                         // dx = 0.1, dy = 0.0375
@@ -111,6 +113,8 @@ public class YourService extends KiboRpcService {
                                 * rotationMatrixData[i][0][1];
                         pos.y += 0.1f * rotationMatrixData[i][1][0] + 0.0375f
                                 * rotationMatrixData[i][1][1];
+                        pos.z += 0.1f * rotationMatrixData[i][2][0] + 0.0375f
+                                * rotationMatrixData[i][2][1];
                         break;
                     case 3:
                         // dx = 0.1, dy = -0.0375
@@ -118,6 +122,8 @@ public class YourService extends KiboRpcService {
                                 * rotationMatrixData[i][0][1];
                         pos.y += 0.1f * rotationMatrixData[i][1][0] - 0.0375f
                                 * rotationMatrixData[i][1][1];
+                        pos.z += 0.1f * rotationMatrixData[i][2][0] - 0.0375f
+                                * rotationMatrixData[i][2][1];
                         break;
                     case 4:
                         // dx = -0.1, dy = -0.0375
@@ -125,6 +131,8 @@ public class YourService extends KiboRpcService {
                                 * rotationMatrixData[i][0][1];
                         pos.y += -0.1f * rotationMatrixData[i][1][0] - 0.0375f
                                 * rotationMatrixData[i][1][1];
+                        pos.z += -0.1f * rotationMatrixData[i][2][0] - 0.0375f
+                                * rotationMatrixData[i][2][1];
                         break;
                 }
             }
