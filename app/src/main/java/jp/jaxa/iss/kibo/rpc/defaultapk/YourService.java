@@ -3,6 +3,7 @@ package jp.jaxa.iss.kibo.rpc.defaultapk;
 import jp.jaxa.iss.kibo.rpc.api.KiboRpcService;
 import gov.nasa.arc.astrobee.types.Point;
 import gov.nasa.arc.astrobee.types.Quaternion;
+import android.support.compat.R.id;
 import android.util.Log;
 
 import org.opencv.aruco.Aruco;
@@ -62,16 +63,21 @@ public class YourService extends KiboRpcService {
         private Mat rvecs;
         private Mat tvecs;
         private Mat rotationMatrix = new Mat();
-        private double[][] rotationMatrixData = new double[3][3];
+        private double[][][] rotationMatrixData;
 
         private void inputData(Mat ids, Mat rvecs, Mat tvecs) {
             this.ids = ids;
             this.rvecs = rvecs;
             this.tvecs = tvecs;
-            Calib3d.Rodrigues(rvecs, rotationMatrix);
-            rotationMatrix.get(0, 0, rotationMatrixData[0]);
-            rotationMatrix.get(1, 0, rotationMatrixData[1]);
-            rotationMatrix.get(2, 0, rotationMatrixData[2]);
+            int dataRows = ids.rows();
+            rotationMatrixData = new double[dataRows][3][3];
+            for (int i = 0; i < dataRows; i++) {
+                Mat rotationMatrix = new Mat();
+                Calib3d.Rodrigues(rvecs.row(i), rotationMatrix);
+                rotationMatrix.get(0, 0, rotationMatrixData[i][0]);
+                rotationMatrix.get(1, 0, rotationMatrixData[i][1]);
+                rotationMatrix.get(2, 0, rotationMatrixData[i][2]);
+            }
         }
 
         private Point3 getEstimatedPos() {
@@ -94,31 +100,31 @@ public class YourService extends KiboRpcService {
                 switch (id % 4 + 1) {
                     case 1:
                         // dx = -0.1, dy = 0.0375
-                        pos.x += -0.1f * rotationMatrixData[0][0] + 0.0375f
-                                * rotationMatrixData[0][1];
-                        pos.y += -0.1f * rotationMatrixData[1][0] + 0.0375f
-                                * rotationMatrixData[1][1];
+                        pos.x += -0.1f * rotationMatrixData[i][0][0] + 0.0375f
+                                * rotationMatrixData[i][0][1];
+                        pos.y += -0.1f * rotationMatrixData[i][1][0] + 0.0375f
+                                * rotationMatrixData[i][1][1];
                         break;
                     case 2:
                         // dx = 0.1, dy = 0.0375
-                        pos.x += 0.1f * rotationMatrixData[0][0] + 0.0375f
-                                * rotationMatrixData[0][1];
-                        pos.y += 0.1f * rotationMatrixData[1][0] + 0.0375f
-                                * rotationMatrixData[1][1];
+                        pos.x += 0.1f * rotationMatrixData[i][0][0] + 0.0375f
+                                * rotationMatrixData[i][0][1];
+                        pos.y += 0.1f * rotationMatrixData[i][1][0] + 0.0375f
+                                * rotationMatrixData[i][1][1];
                         break;
                     case 3:
                         // dx = 0.1, dy = -0.0375
-                        pos.x += 0.1f * rotationMatrixData[0][0] - 0.0375f
-                                * rotationMatrixData[0][1];
-                        pos.y += 0.1f * rotationMatrixData[1][0] - 0.0375f
-                                * rotationMatrixData[1][1];
+                        pos.x += 0.1f * rotationMatrixData[i][0][0] - 0.0375f
+                                * rotationMatrixData[i][0][1];
+                        pos.y += 0.1f * rotationMatrixData[i][1][0] - 0.0375f
+                                * rotationMatrixData[i][1][1];
                         break;
                     case 4:
                         // dx = -0.1, dy = -0.0375
-                        pos.x += -0.1f * rotationMatrixData[0][0] - 0.0375f
-                                * rotationMatrixData[0][1];
-                        pos.y += -0.1f * rotationMatrixData[1][0] - 0.0375f
-                                * rotationMatrixData[1][1];
+                        pos.x += -0.1f * rotationMatrixData[i][0][0] - 0.0375f
+                                * rotationMatrixData[i][0][1];
+                        pos.y += -0.1f * rotationMatrixData[i][1][0] - 0.0375f
+                                * rotationMatrixData[i][1][1];
                         break;
                 }
             }
