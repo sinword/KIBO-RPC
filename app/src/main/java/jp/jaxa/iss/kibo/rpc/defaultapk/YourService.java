@@ -152,8 +152,7 @@ public class YourService extends KiboRpcService {
         private Mat lineDirection;
         private Mat targetPoint;
 
-        private LineRotation(Mat linePoint, Mat lineDirection,
-                Mat targetPoint) {
+        private LineRotation(Mat linePoint, Mat lineDirection, Mat targetPoint) {
             this.linePoint = linePoint;
             this.lineDirection = lineDirection;
             this.targetPoint = targetPoint;
@@ -193,6 +192,18 @@ public class YourService extends KiboRpcService {
 
         private double norm1(Point3 point) {
             return Math.sqrt(point.x * point.x + point.y * point.y + point.z * point.z);
+        }
+
+        private double[] getQuaternion() {
+            double[] angleAxis = getAngleAxis();
+            double angle = angleAxis[0];
+            double[] axis = new double[] { angleAxis[1], angleAxis[2], angleAxis[3] };
+            double[] quaternion = new double[4];
+            quaternion[0] = Math.cos(angle / 2);
+            quaternion[1] = axis[0] * Math.sin(angle / 2);
+            quaternion[2] = axis[1] * Math.sin(angle / 2);
+            quaternion[3] = axis[2] * Math.sin(angle / 2);
+            return quaternion;
         }
     }
 
@@ -267,6 +278,25 @@ public class YourService extends KiboRpcService {
         Point3 pos = estimation.getEstimatedPos();
 
         Log.i(TAG, "Relative to camera: " + pos.x + ", " + pos.y + ", " + pos.z);
+
+        Mat targetPoint = new Mat(3, 1, CvType.CV_64FC1);
+        targetPoint.put(0, 0, pos.z);
+        targetPoint.put(1, 0, pos.x);
+        targetPoint.put(2, 0, pos.y);
+        Mat lineDirection = new Mat(3, 1, CvType.CV_64FC1);
+        lineDirection.put(0, 0, 1);
+        lineDirection.put(1, 0, 0);
+        lineDirection.put(2, 0, 0);
+        Mat linePoint = new Mat(3, 1, CvType.CV_64FC1);
+        linePoint.put(0, 0, config.LASER_POSITION);
+        LineRotation lineRotation = new LineRotation(linePoint, lineDirection, targetPoint);
+
+        Log.i(TAG, "angle: " + lineRotation.getAngleAxis()[0]);
+        Log.i(TAG, "axis: " + lineRotation.getAngleAxis()[1] + ", "
+                + lineRotation.getAngleAxis()[2] + ", " + lineRotation.getAngleAxis()[3]);
+        Log.i(TAG, "quaternion: " + lineRotation.getQuaternion()[0] + ", "
+                + lineRotation.getQuaternion()[1] + ", " + lineRotation.getQuaternion()[2]
+                + ", " + lineRotation.getQuaternion()[3]);
 
         api.saveMatImage(image, "target_" + targetNumber + "_" + config.count[targetNumber]
                 + ".png");
