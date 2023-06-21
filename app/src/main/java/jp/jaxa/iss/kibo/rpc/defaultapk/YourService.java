@@ -59,11 +59,19 @@ public class YourService extends KiboRpcService {
 
     private class Estimation {
         private Mat ids;
+        private Mat rvecs;
         private Mat tvecs;
+        private Mat rotationMatrix = new Mat();
+        private double[][] rotationMatrixData = new double[3][3];
 
-        private void inputData(Mat ids, Mat tvecs) {
+        private void inputData(Mat ids, Mat rvecs, Mat tvecs) {
             this.ids = ids;
+            this.rvecs = rvecs;
             this.tvecs = tvecs;
+            Calib3d.Rodrigues(rvecs, rotationMatrix);
+            rotationMatrix.get(0, 0, rotationMatrixData[0]);
+            rotationMatrix.get(1, 0, rotationMatrixData[1]);
+            rotationMatrix.get(2, 0, rotationMatrixData[2]);
         }
 
         private Point3 getEstimatedPos() {
@@ -77,27 +85,40 @@ public class YourService extends KiboRpcService {
                 Log.i(TAG, "id: " + id);
                 double[] data = new double[3];
                 tvecs.get(i, 0, data);
+
                 Log.i(TAG, "size:" + data.length);
                 Log.i(TAG, "data: " + data[0] + ", " + data[1] + ", " + data[2]);
                 pos.x += data[0];
                 pos.y += data[1];
                 pos.z += data[2];
-                switch (id % 4) {
-                    case 0:
-                        pos.x -= 0.1f;
-                        pos.y -= 0.0375f;
-                        break;
+                switch (id % 4 + 1) {
                     case 1:
-                        pos.x += 0.1f;
-                        pos.y -= 0.0375f;
+                        // dx = -0.1, dy = 0.0375
+                        pos.x += -0.1f * rotationMatrixData[0][0] + 0.0375f
+                                * rotationMatrixData[0][1];
+                        pos.y += -0.1f * rotationMatrixData[1][0] + 0.0375f
+                                * rotationMatrixData[1][1];
                         break;
                     case 2:
-                        pos.x += 0.1f;
-                        pos.y += 0.0375f;
+                        // dx = 0.1, dy = 0.0375
+                        pos.x += 0.1f * rotationMatrixData[0][0] + 0.0375f
+                                * rotationMatrixData[0][1];
+                        pos.y += 0.1f * rotationMatrixData[1][0] + 0.0375f
+                                * rotationMatrixData[1][1];
                         break;
                     case 3:
-                        pos.x -= 0.1f;
-                        pos.y += 0.0375f;
+                        // dx = 0.1, dy = -0.0375
+                        pos.x += 0.1f * rotationMatrixData[0][0] - 0.0375f
+                                * rotationMatrixData[0][1];
+                        pos.y += 0.1f * rotationMatrixData[1][0] - 0.0375f
+                                * rotationMatrixData[1][1];
+                        break;
+                    case 4:
+                        // dx = -0.1, dy = -0.0375
+                        pos.x += -0.1f * rotationMatrixData[0][0] - 0.0375f
+                                * rotationMatrixData[0][1];
+                        pos.y += -0.1f * rotationMatrixData[1][0] - 0.0375f
+                                * rotationMatrixData[1][1];
                         break;
                 }
             }
@@ -179,7 +200,7 @@ public class YourService extends KiboRpcService {
         Log.i(TAG, "tvecs: " + tvecs.dump());
 
         Estimation estimation = new Estimation();
-        estimation.inputData(ids, tvecs);
+        estimation.inputData(ids, rvecs, tvecs);
         Point3 pos = estimation.getEstimatedPos();
 
         Log.i(TAG, "Relative position: " + pos.x + ", " + pos.y + ", " + pos.z);
