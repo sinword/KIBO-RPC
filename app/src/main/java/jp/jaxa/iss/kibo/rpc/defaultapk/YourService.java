@@ -68,12 +68,20 @@ public class YourService extends KiboRpcService {
 
         private Point3 getEstimatedPos() {
             Point3 pos = new Point3(0, 0, 0);
+            Log.i(TAG, "In getEstimatedPos");
+            Log.i(TAG, "ids: " + ids.dump());
+            Log.i(TAG, "tvecs: " + tvecs.dump());
 
             for (int i = 0; i < tvecs.rows(); i++) {
                 int id = (int) ids.get(i, 0)[0];
-                pos.x += tvecs.get(i, 0)[0];
-                pos.y += tvecs.get(i, 1)[0];
-                pos.z += tvecs.get(i, 2)[0];
+                Log.i(TAG, "id: " + id);
+                double[] data = new double[3];
+                tvecs.get(i, 0, data);
+                Log.i(TAG, "size:" + data.length);
+                Log.i(TAG, "data: " + data[0] + ", " + data[1] + ", " + data[2]);
+                pos.x += data[0];
+                pos.y += data[1];
+                pos.z += data[2];
                 switch (id % 4) {
                     case 0:
                         pos.x -= 0.1f;
@@ -167,11 +175,14 @@ public class YourService extends KiboRpcService {
         Aruco.estimatePoseSingleMarkers(corners, config.MARKER_LENGTH, config.navCamMatrix,
                 config.distCoeffs, rvecs, tvecs);
 
+        Log.i(TAG, "rvecs: " + rvecs.dump());
+        Log.i(TAG, "tvecs: " + tvecs.dump());
+
         Estimation estimation = new Estimation();
         estimation.inputData(ids, tvecs);
         Point3 pos = estimation.getEstimatedPos();
 
-        Log.d(TAG, "Relative position: " + pos.x + ", " + pos.y + ", " + pos.z);
+        Log.i(TAG, "Relative position: " + pos.x + ", " + pos.y + ", " + pos.z);
 
         api.saveMatImage(image, "target_" + targetNumber + "_" + config.count[targetNumber]
                 + ".png");
