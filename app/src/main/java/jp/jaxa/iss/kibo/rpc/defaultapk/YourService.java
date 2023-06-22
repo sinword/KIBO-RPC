@@ -72,8 +72,10 @@ public class YourService extends KiboRpcService {
         }
 
         /*
-         * This method will calculate the position of the target by averaging the position each marker delivers
-         * The position of target is calculated by using the position of the marker and the rotation matrix
+         * This method will calculate the position of the target by averaging the
+         * position each marker delivers
+         * The position of target is calculated by using the position of the marker and
+         * the rotation matrix
          * 
          * @return the position of the target
          */
@@ -183,36 +185,32 @@ public class YourService extends KiboRpcService {
             subtract(targetPoint, linePoint, rotatedVector);
             gemm(rotationMatrix, rotatedVector, 1, new Mat(), 0, rotatedVector);
 
-            // Convert Mat to Point3
-            Point3 rotatedVectorPoint = new Point3(rotatedVector.get(0, 0)[0], rotatedVector.get(1, 0)[0],
-                    rotatedVector.get(2, 0)[0]);
+            // Extract the components of the rotated vector
+            double[] rotatedVectorComponents = new double[3];
+            rotatedVector.get(0, 0, rotatedVectorComponents);
 
             // Calculate the angle and axis
-            double dotProduct = lineDirection.get(0, 0)[0] * rotatedVectorPoint.x
-                    + lineDirection.get(1, 0)[0] * rotatedVectorPoint.y
-                    + lineDirection.get(2, 0)[0] * rotatedVectorPoint.z;
-            double angle = Math.acos(dotProduct / (norm(lineDirection) * norm1(rotatedVectorPoint)));
-
             double[] axis = new double[3];
-            axis[0] = lineDirection.get(1, 0)[0] * rotatedVectorPoint.z
-                    - lineDirection.get(2, 0)[0] * rotatedVectorPoint.y;
-            axis[1] = lineDirection.get(2, 0)[0] * rotatedVectorPoint.x
-                    - lineDirection.get(0, 0)[0] * rotatedVectorPoint.z;
-            axis[2] = lineDirection.get(0, 0)[0] * rotatedVectorPoint.y
-                    - lineDirection.get(1, 0)[0] * rotatedVectorPoint.x;
+            axis[0] = lineDirection.get(1, 0)[0] * rotatedVectorComponents[2]
+                    - lineDirection.get(2, 0)[0] * rotatedVectorComponents[1];
+            axis[1] = lineDirection.get(2, 0)[0] * rotatedVectorComponents[0]
+                    - lineDirection.get(0, 0)[0] * rotatedVectorComponents[2];
+            axis[2] = lineDirection.get(0, 0)[0] * rotatedVectorComponents[1]
+                    - lineDirection.get(1, 0)[0] * rotatedVectorComponents[0];
+
+            double normAxis = Math.sqrt(axis[0] * axis[0] + axis[1] * axis[1] + axis[2] * axis[2]);
+            if (normAxis != 0) {
+                axis[0] /= normAxis;
+                axis[1] /= normAxis;
+                axis[2] /= normAxis;
+            }
+
+            double dotProduct = lineDirection.get(0, 0)[0] * rotatedVectorComponents[0]
+                    + lineDirection.get(1, 0)[0] * rotatedVectorComponents[1]
+                    + lineDirection.get(2, 0)[0] * rotatedVectorComponents[2];
+            double angle = Math.acos(dotProduct / (norm(lineDirection) * norm(rotatedVector)));
 
             return new double[] { angle, axis[0], axis[1], axis[2] };
-        }
-
-        /*
-         * This method will calculate the norm of a Point3. This is an auxiliary method.
-         * 
-         * @param point the point
-         * 
-         * @return the norm of the point
-         */
-        private double norm1(Point3 point) {
-            return Math.sqrt(point.x * point.x + point.y * point.y + point.z * point.z);
         }
 
         /*
