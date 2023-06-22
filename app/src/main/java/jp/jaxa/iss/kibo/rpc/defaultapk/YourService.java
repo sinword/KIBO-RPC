@@ -353,7 +353,7 @@ public class YourService extends KiboRpcService {
 
         // (1, 0, 0) represents the direction of the laser which is shoot forward
         Mat lineDirection = new Mat(3, 1, CvType.CV_64FC1);
-        lineDirection.put(0, 0, 1);
+        lineDirection.put(0, 0, 0);
         lineDirection.put(1, 0, 0);
         lineDirection.put(2, 0, 0);
         Mat linePoint = new Mat(3, 1, CvType.CV_64FC1);
