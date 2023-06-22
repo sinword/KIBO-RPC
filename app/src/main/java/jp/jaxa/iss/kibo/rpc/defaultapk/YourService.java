@@ -3,7 +3,6 @@ package jp.jaxa.iss.kibo.rpc.defaultapk;
 import jp.jaxa.iss.kibo.rpc.api.KiboRpcService;
 import gov.nasa.arc.astrobee.types.Point;
 import gov.nasa.arc.astrobee.types.Quaternion;
-import android.support.compat.R.id;
 import android.util.Log;
 
 import org.opencv.aruco.Aruco;
@@ -12,12 +11,7 @@ import org.opencv.calib3d.Calib3d;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfDouble;
-import org.opencv.core.MatOfPoint2f;
-import org.opencv.core.MatOfPoint3;
-import org.opencv.core.MatOfPoint3f;
 import org.opencv.core.Point3;
-import org.opencv.core.Scalar;
-import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,8 +29,9 @@ public class YourService extends KiboRpcService {
     private final String TAG = this.getClass().getSimpleName();
     private Config config;
 
-    // relative to robot body
-
+    /*
+     * This class is used to store the configuration of the mission
+     */
     private class Config {
         private final float[] NAV_CAM_POSITION = new float[] { 0.1177f,
                 -0.0422f, -0.0826f };
@@ -45,11 +40,6 @@ public class YourService extends KiboRpcService {
         private final float MARKER_LENGTH = 0.05f;
         private int[] count = new int[] { 0, 0, 0, 0, 0, 0, 0 };
         private final int LOOP_LIMIT = 5;
-        private MatOfPoint3 objPoints = new MatOfPoint3(
-                new Point3(-MARKER_LENGTH / 2.0f, MARKER_LENGTH / 2.0f, 0f),
-                new Point3(MARKER_LENGTH / 2.0f, MARKER_LENGTH / 2.0f, 0f),
-                new Point3(MARKER_LENGTH / 2.0f, -MARKER_LENGTH / 2.0f, 0f),
-                new Point3(-MARKER_LENGTH / 2.0f, -MARKER_LENGTH / 2.0f, 0f));
         private Mat navCamMatrix = new Mat(3, 3, CvType.CV_32FC1);
         private MatOfDouble distCoeffs = new MatOfDouble();
         private Dictionary arucoDict = Aruco.getPredefinedDictionary(Aruco.DICT_5X5_250);
@@ -62,14 +52,13 @@ public class YourService extends KiboRpcService {
 
     private class Estimation {
         private Mat ids;
-        private Mat rvecs;
         private Mat tvecs;
+        // rvecs cannot be used directly, so we need to calculate the rotation matrix
         private Mat rotationMatrix = new Mat();
         private double[][][] rotationMatrixData;
 
         private Estimation(Mat ids, Mat rvecs, Mat tvecs) {
             this.ids = ids;
-            this.rvecs = rvecs;
             this.tvecs = tvecs;
             int dataRows = ids.rows();
             rotationMatrixData = new double[dataRows][3][3];
@@ -82,6 +71,12 @@ public class YourService extends KiboRpcService {
             }
         }
 
+        /*
+         * This method will calculate the position of the target by averaging the position each marker delivers
+         * The position of target is calculated by using the position of the marker and the rotation matrix
+         * 
+         * @return the position of the target
+         */
         private Point3 getEstimatedPos() {
             Point3 pos = new Point3(0, 0, 0);
             Log.i(TAG, "In getEstimatedPos");
@@ -152,12 +147,31 @@ public class YourService extends KiboRpcService {
         private Mat lineDirection;
         private Mat targetPoint;
 
+        /*
+         * This is the constructor of LineRotation class. Note that 3 parms are all in
+         * Mat form.
+         * 
+         * @param linePoint the point on the line
+         * 
+         * @param lineDirection the direction of the line
+         * 
+         * @param targetPoint the target point
+         */
         private LineRotation(Mat linePoint, Mat lineDirection, Mat targetPoint) {
             this.linePoint = linePoint;
             this.lineDirection = lineDirection;
             this.targetPoint = targetPoint;
         }
 
+        /*
+         * This method will calculate the angle and axis of the rotation. This is an
+         * auxiliary method.
+         * 
+         * @return the angle and axis in the form of (angle, x, y, z)
+         * 
+         * The x, y, z represents the axis of rotation. You can call getQuaternion to
+         * get the quaternion directly.
+         */
         private double[] getAngleAxis() {
             // Calculate the rotation matrix
             Mat rotationMatrix = new Mat();
@@ -190,10 +204,22 @@ public class YourService extends KiboRpcService {
             return new double[] { angle, axis[0], axis[1], axis[2] };
         }
 
+        /*
+         * This method will calculate the norm of a Point3. This is an auxiliary method.
+         * 
+         * @param point the point
+         * 
+         * @return the norm of the point
+         */
         private double norm1(Point3 point) {
             return Math.sqrt(point.x * point.x + point.y * point.y + point.z * point.z);
         }
 
+        /*
+         * This method will calculate the quaternion that represents the rotation
+         * 
+         * @return the quaternion in the form of (w, x, y, z)
+         */
         private double[] getQuaternion() {
             double[] angleAxis = getAngleAxis();
             double angle = angleAxis[0];
@@ -253,7 +279,22 @@ public class YourService extends KiboRpcService {
         api.startMission();
     }
 
-    private static double[] multiplyQuaternions(double[] q1, double[] q2) {
+    /*
+     * This method will multiply two quaternions using Hamilton product rule
+     * 
+     * @param q1 the first quaternion
+     * 
+     * @param q2 the second quaternion
+     * note: q1 and q2 should be in the form of (w, x, y, z) and the order matters
+     * 
+     * @return the result of the multiplication
+     */
+    private double[] multiplyQuaternions(double[] q1, double[] q2) {
+        if (q1.length != 4 || q2.length != 4) {
+            Log.i(TAG, "Invalid quaternion length");
+            return null;
+        }
+
         double w1 = q1[0];
         double x1 = q1[1];
         double y1 = q1[2];
@@ -276,27 +317,34 @@ public class YourService extends KiboRpcService {
     private void calibrateLocation(int targetNumber) {
         Log.i(TAG, "In calibrateLocation");
         Mat image = api.getMatNavCam();
-        List<Mat> corners = new ArrayList<>();
-        Mat ids = new Mat();
-        Aruco.detectMarkers(image, config.arucoDict, corners, ids);
-        Aruco.drawDetectedMarkers(image, corners, ids);
-
-        if (ids.size().empty()) {
+        if (image.empty()) {
+            Log.i(TAG, "image is empty");
             return;
         }
 
+        // this method will check the image and return the ids and corners of the
+        // markers
+        List<Mat> corners = new ArrayList<>();
+        Mat ids = new Mat();
+        Aruco.detectMarkers(image, config.arucoDict, corners, ids);
+
+        if (ids.size().empty()) {
+            Log.i(TAG, "No markers detected");
+            return;
+        }
+        // below are conditions that markers exist
+
+        // calculate rotation and translation vectors
         Mat rvecs = new Mat();
         Mat tvecs = new Mat();
-        Log.i(TAG, "Estimating markers pose");
         Aruco.estimatePoseSingleMarkers(corners, config.MARKER_LENGTH, config.navCamMatrix,
                 config.distCoeffs, rvecs, tvecs);
-
         Log.i(TAG, "rvecs: " + rvecs.dump());
         Log.i(TAG, "tvecs: " + tvecs.dump());
 
+        // calculate the position of the target
         Estimation estimation = new Estimation(ids, rvecs, tvecs);
         Point3 pos = estimation.getEstimatedPos();
-
         Log.i(TAG, "Relative to camera: " + pos.x + ", " + pos.y + ", " + pos.z);
 
         Mat targetPoint = new Mat(3, 1, CvType.CV_64FC1);
@@ -305,6 +353,7 @@ public class YourService extends KiboRpcService {
         targetPoint.put(2, 0, pos.y + config.NAV_CAM_POSITION[2]);
         Log.i(TAG, "Relative to center of kibo in its cords: " + targetPoint.dump());
 
+        // (1, 0, 0) represents the direction of the laser which is shoot forward
         Mat lineDirection = new Mat(3, 1, CvType.CV_64FC1);
         lineDirection.put(0, 0, 1);
         lineDirection.put(1, 0, 0);
@@ -314,6 +363,7 @@ public class YourService extends KiboRpcService {
             linePoint.put(i, 0, config.LASER_POSITION[i]);
         }
 
+        // LineRotatoin class will calculate the angle that kibo should turn
         LineRotation lineRotation = new LineRotation(linePoint, lineDirection, targetPoint);
         double[] dr = lineRotation.getQuaternion();
         Log.i(TAG, "quaternion: " + dr[0] + ", " + dr[1] + ", " + dr[2] + ", " + dr[3]);
@@ -322,11 +372,22 @@ public class YourService extends KiboRpcService {
         double[] originalQuaternionInDouble = { originalQuaternion.getW(), originalQuaternion.getX(),
                 originalQuaternion.getY(), originalQuaternion.getZ() };
         double[] totalRotation = multiplyQuaternions(dr, originalQuaternionInDouble);
+        if (totalRotation == null) {
+            Log.i(TAG, "totalRotation is null");
+            return;
+        }
         Quaternion totoalQuaternion = new Quaternion((float) totalRotation[1], (float) totalRotation[2],
                 (float) totalRotation[3], (float) totalRotation[0]);
         Log.i(TAG, "(x, y, z, w): " + totalRotation[1] + ", " + totalRotation[2] + ", " + totalRotation[3]
                 + ", " + totalRotation[0]);
 
+        api.saveMatImage(image, "target_" + targetNumber + "_" + config.count[targetNumber]
+                + ".png");
+        config.count[targetNumber]++;
+
+        api.relativeMoveTo(new Point(0, 0, 0), totoalQuaternion, true);
+
+        image = api.getMatNavCam();
         api.saveMatImage(image, "target_" + targetNumber + "_" + config.count[targetNumber]
                 + ".png");
         config.count[targetNumber]++;
