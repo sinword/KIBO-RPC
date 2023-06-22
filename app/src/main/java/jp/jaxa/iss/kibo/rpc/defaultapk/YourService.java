@@ -253,6 +253,26 @@ public class YourService extends KiboRpcService {
         api.startMission();
     }
 
+    private static double[] multiplyQuaternions(double[] q1, double[] q2) {
+        double w1 = q1[0];
+        double x1 = q1[1];
+        double y1 = q1[2];
+        double z1 = q1[3];
+
+        double w2 = q2[0];
+        double x2 = q2[1];
+        double y2 = q2[2];
+        double z2 = q2[3];
+
+        double[] result = new double[4];
+        result[0] = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2;
+        result[1] = w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2;
+        result[2] = w1 * y2 - x1 * z2 + y1 * w2 + z1 * x2;
+        result[3] = w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2;
+
+        return result;
+    }
+
     private void calibrateLocation(int targetNumber) {
         Log.i(TAG, "In calibrateLocation");
         Mat image = api.getMatNavCam();
@@ -283,6 +303,8 @@ public class YourService extends KiboRpcService {
         targetPoint.put(0, 0, pos.z + config.NAV_CAM_POSITION[0]);
         targetPoint.put(1, 0, pos.x + config.NAV_CAM_POSITION[1]);
         targetPoint.put(2, 0, pos.y + config.NAV_CAM_POSITION[2]);
+        Log.i(TAG, "Relative to center of kibo in its cords: " + targetPoint.dump());
+
         Mat lineDirection = new Mat(3, 1, CvType.CV_64FC1);
         lineDirection.put(0, 0, 1);
         lineDirection.put(1, 0, 0);
@@ -291,14 +313,19 @@ public class YourService extends KiboRpcService {
         for (int i = 0; i < 3; i++) {
             linePoint.put(i, 0, config.LASER_POSITION[i]);
         }
-        LineRotation lineRotation = new LineRotation(linePoint, lineDirection, targetPoint);
 
-        Log.i(TAG, "angle: " + lineRotation.getAngleAxis()[0]);
-        Log.i(TAG, "axis: " + lineRotation.getAngleAxis()[1] + ", "
-                + lineRotation.getAngleAxis()[2] + ", " + lineRotation.getAngleAxis()[3]);
-        Log.i(TAG, "quaternion: " + lineRotation.getQuaternion()[0] + ", "
-                + lineRotation.getQuaternion()[1] + ", " + lineRotation.getQuaternion()[2]
-                + ", " + lineRotation.getQuaternion()[3]);
+        LineRotation lineRotation = new LineRotation(linePoint, lineDirection, targetPoint);
+        double[] dr = lineRotation.getQuaternion();
+        Log.i(TAG, "quaternion: " + dr[0] + ", " + dr[1] + ", " + dr[2] + ", " + dr[3]);
+
+        Quaternion originalQuaternion = api.getRobotKinematics().getOrientation();
+        double[] originalQuaternionInDouble = { originalQuaternion.getW(), originalQuaternion.getX(),
+                originalQuaternion.getY(), originalQuaternion.getZ() };
+        double[] totalRotation = multiplyQuaternions(dr, originalQuaternionInDouble);
+        Quaternion totoalQuaternion = new Quaternion((float) totalRotation[1], (float) totalRotation[2],
+                (float) totalRotation[3], (float) totalRotation[0]);
+        Log.i(TAG, "(x, y, z, w): " + totalRotation[1] + ", " + totalRotation[2] + ", " + totalRotation[3]
+                + ", " + totalRotation[0]);
 
         api.saveMatImage(image, "target_" + targetNumber + "_" + config.count[targetNumber]
                 + ".png");
