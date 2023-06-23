@@ -1,4 +1,4 @@
-package jp.jaxa.iss.kibo.rpc.defaultapk.Basic;
+package Basic;
 
 public class Plane {
     /** Offset of the origin with respect to the plane. */

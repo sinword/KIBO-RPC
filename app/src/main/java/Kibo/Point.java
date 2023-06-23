@@ -1,4 +1,4 @@
-package jp.jaxa.iss.kibo.rpc.defaultapk.Kibo;
+package Kibo;
 
 
 public class Point {

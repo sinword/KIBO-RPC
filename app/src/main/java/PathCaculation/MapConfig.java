@@ -1,7 +1,7 @@
-package jp.jaxa.iss.kibo.rpc.defaultapk.PathCaculation;
+package PathCaculation;
 
-import jp.jaxa.iss.kibo.rpc.defaultapk.Basic.Cuboid;
-import jp.jaxa.iss.kibo.rpc.defaultapk.Kibo.Point;
+import Basic.Cuboid;
+import Kibo.Point;
 
 public class MapConfig implements IMapConfig {
 
