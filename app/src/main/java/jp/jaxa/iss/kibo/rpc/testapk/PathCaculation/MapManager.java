@@ -11,10 +11,12 @@ import Kibo.Point;
 public class MapManager{
     public Graph BasicGraph;
     public IMapConfig config;
-    public MapManager(IMapConfig config, double distance_from_KOZ){
+
+    public MapManager(IMapConfig config, double distance_from_KOZ) {
         this.config = config;
         createBasicGraph(config.getAllKOZs(), distance_from_KOZ);
     }
+
     private void createBasicGraph(Cuboid[] KOZs, double distance_from_KOZ) {
         BasicGraph = new Graph(true);
         for (int i = 0; i < KOZs.length; i++) {
@@ -41,8 +43,6 @@ public class MapManager{
         }
     }
 
-
-
     public boolean NotInKOZ(LineSegment line){
         var KOZs = config.getAllKOZs();
         for (int i = 0; i < KOZs.length; i++){
@@ -52,6 +52,7 @@ public class MapManager{
         }
         return true;
     }
+
     public boolean NotInKOZ(Vector3D point){
         var KOZs = config.getAllKOZs();
         for (int i = 0; i < KOZs.length; i++){
@@ -61,7 +62,8 @@ public class MapManager{
         }
         return true;
     }
-    public Point[] getShortestPath(Point from, Point to){
+
+    public Point[] getShortestPath(Point from, Point to) {
         Vector3D[] result = getShortestPath(new Vector3D(from.x, from.y, from.z), new Vector3D(to.x, to.y, to.z));
         Point[] result2 = new Point[result.length];
         for (int i = 0; i < result.length; i++){
@@ -70,7 +72,7 @@ public class MapManager{
         return result2;
     }
 
-    public Vector3D[] getShortestPath(Vector3D from, Vector3D to){
+    public Vector3D[] getShortestPath(Vector3D from, Vector3D to) {
         if (!NotInKOZ(from) || !NotInKOZ(to)){
             throw new IllegalArgumentException("from point or to point is in KOZ");
         }
@@ -87,6 +89,7 @@ public class MapManager{
         }
         return result;
     }
+
     private void addNewNode(Graph graph, Node n){
         graph.addNode(n);
         Node[] AllNodes = graph.nodes.toArray(new Node[graph.nodes.size()]);
@@ -102,7 +105,3 @@ public class MapManager{
 
     }
 }
-
-
-
-
