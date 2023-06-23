@@ -382,32 +382,6 @@ public class YourService extends KiboRpcService {
         config.count[targetNumber]++;
 
         api.relativeMoveTo(new Point(0, 0, 0), orientationQuaternion, true);
-
-        image = api.getMatNavCam();
-        api.saveMatImage(image, "target_" + targetNumber + "_" + config.count[targetNumber]
-                + ".png");
-        config.count[targetNumber]++;
-
-        // below are for debugging
-        corners = new ArrayList<>();
-        ids = new Mat();
-        Aruco.detectMarkers(image, config.arucoDict, corners, ids);
-        rvecs = new Mat();
-        tvecs = new Mat();
-        Aruco.estimatePoseSingleMarkers(corners, config.MARKER_LENGTH, config.navCamMatrix,
-                config.distCoeffs, rvecs, tvecs);
-        estimation = new Estimation(ids, rvecs, tvecs);
-        pos = estimation.getEstimatedPos();
-        Log.i(TAG, "Relative to camera: " + pos.x + ", " + pos.y + ", " + pos.z);
-        targetPoint = new Mat(3, 1, CvType.CV_64FC1);
-        targetPoint.put(0, 0, pos.z + config.NAV_CAM_POSITION[0]);
-        targetPoint.put(1, 0, pos.x + config.NAV_CAM_POSITION[1]);
-        targetPoint.put(2, 0, pos.y + config.NAV_CAM_POSITION[2]);
-        Log.i(TAG, "Relative to center of kibo in its cords: " + targetPoint.dump());
-        for (int i = 0; i < 3; ++i) {
-            targetPoint.put(i, 0, targetPoint.get(i, 0)[0] - config.LASER_POSITION[i]);
-        }
-        Log.i(TAG, "Relative to laser: " + targetPoint.dump());
     }
 
     private void handleTarget(int targetNumber) {
