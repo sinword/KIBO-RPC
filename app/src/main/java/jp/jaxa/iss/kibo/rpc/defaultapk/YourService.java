@@ -4,7 +4,7 @@ import jp.jaxa.iss.kibo.rpc.api.KiboRpcService;
 import gov.nasa.arc.astrobee.types.Point;
 import gov.nasa.arc.astrobee.types.Quaternion;
 import android.util.Log;
-import PathCalcualtion.MapManager;
+import PathCaculation.*;
 
 import org.opencv.aruco.Aruco;
 import org.opencv.aruco.Dictionary;
@@ -69,7 +69,7 @@ public class YourService extends KiboRpcService {
 
         start();
 
-        goToPoint1();
+//        goToPoint1();
 
         handleTarget(1);
 
@@ -88,24 +88,24 @@ public class YourService extends KiboRpcService {
         runPlan1();
     }
 
-    private void goToPoint1() {
-        // avoid KOZ
-        MapManager manager = new MapManager(new MapConfig(), 1);
-        var source = config.StartPoint;
-        var destination = config.Point1;
-        var path = manager.getShortestPath(source, destination);
-        Quateration quaternion = new Quateration(0f, 0f, 0f, 1f);
-        for (Point point: path) {
-            api.moveTo(point, quaternion, true);
-        }
-//        Point point = new Point(10.3f, -10.2f, 4.32f);
-//        Quaternion quaternion = new Quaternion(0f, 0f, 0f, 1f);
-
-        // point 1
-        point = new Point(11.2746d, -9.92284d, 5.2988d);
-        quaternion = new Quaternion(0.0f, 0.0f, -0.707f, 0.707f);
-        api.moveTo(point, quaternion, true);
-    }
+//    private void goToPoint1() {
+//        // avoid KOZ
+//        MapManager manager = new MapManager(new MapConfig(), 1);
+//        var source = config.StartPoint;
+//        var destination = config.Point1;
+//        var path = manager.getShortestPath(source, destination);
+//        Quateration quaternion = new Quateration(0f, 0f, 0f, 1f);
+//        for (Point point: path) {
+//            api.moveTo(point, quaternion, true);
+//        }
+////        Point point = new Point(10.3f, -10.2f, 4.32f);
+////        Quaternion quaternion = new Quaternion(0f, 0f, 0f, 1f);
+//
+//        // point 1
+//        point = new Point(11.2746d, -9.92284d, 5.2988d);
+//        quaternion = new Quaternion(0.0f, 0.0f, -0.707f, 0.707f);
+//        api.moveTo(point, quaternion, true);
+//    }
 
     private void start() {
         Log.i(TAG, "start mission");

@@ -44,7 +44,7 @@ public class MapManager{
 
 
     public boolean NotInKOZ(LineSegment line){
-        var KOZs = config.getAllKOZs();
+        Cuboid[] KOZs = config.getAllKOZs();
         for (int i = 0; i < KOZs.length; i++){
             if (KOZs[i].isCross(line)){
                 return false;
@@ -53,7 +53,7 @@ public class MapManager{
         return true;
     }
     public boolean NotInKOZ(Vector3D point){
-        var KOZs = config.getAllKOZs();
+        Cuboid[] KOZs = config.getAllKOZs();
         for (int i = 0; i < KOZs.length; i++){
             if (KOZs[i].isInside(point)){
                 return false;
