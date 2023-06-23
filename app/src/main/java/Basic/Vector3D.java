@@ -11,9 +11,9 @@ public class Vector3D {
         this.z = z;
     }
     public Vector3D(Point point){
-        this.x = point.x;
-        this.y = point.y;
-        this.z = point.z;
+        this.x = point.getX();
+        this.y = point.getY();
+        this.z = point.getZ();
     }
     public Point toPoint(){
         return new Point(x, y, z);

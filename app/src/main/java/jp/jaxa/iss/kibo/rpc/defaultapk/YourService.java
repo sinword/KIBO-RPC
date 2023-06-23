@@ -1,10 +1,11 @@
 package jp.jaxa.iss.kibo.rpc.defaultapk;
 
 import jp.jaxa.iss.kibo.rpc.api.KiboRpcService;
-import gov.nasa.arc.astrobee.types.Point;
-import gov.nasa.arc.astrobee.types.Quaternion;
+import gov.nasa.arc.astrobee.types.*;
+import gov.nasa.arc.astrobee.Result;
 import android.util.Log;
 import PathCaculation.*;
+import Basic.*;
 
 import org.opencv.aruco.Aruco;
 import org.opencv.aruco.Dictionary;
@@ -106,8 +107,7 @@ public class YourService extends KiboRpcService {
         directMoveTo(point, quaternion);
     }
     private void directMoveTo(Point point) {
-        Point point = transform.position;
-        Quaternion quaternion = Quaternion();
+        Quaternion quaternion = new Quaternion();
         directMoveTo(point, quaternion);
     }
     private void directMoveTo(Point point, Quaternion quaternion)
