@@ -97,8 +97,8 @@ public class YourService extends KiboRpcService {
     }
     private void moveToByShortestPath(Point point, Transform to){
         Vector3D[] result = mapManager.getShortestPath(new Vector3D(point), to.getVector3DPosition());
-        for (Vector3D vector3D: result) {
-            directMoveTo(vector3D.toPoint(), to.orientation);
+        for (int i = 1; i < result.length; i++) {
+            directMoveTo(result[i].toPoint(), to.orientation);
         }
     }
     private void directMoveTo(Transform transform) {
