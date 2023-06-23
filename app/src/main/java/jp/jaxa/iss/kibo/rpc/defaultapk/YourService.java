@@ -189,9 +189,12 @@ public class YourService extends KiboRpcService {
 
             // Calculate the rotation axis using cross product
             double[] rotationAxis = new double[3];
-            rotationAxis[0] = rotationMatrix.get(2, 1)[0] - dotProduct * normalizedLineVector[0];
-            rotationAxis[1] = -rotationMatrix.get(2, 0)[0] - dotProduct * normalizedLineVector[1];
-            rotationAxis[2] = rotationMatrix.get(1, 0)[0] + dotProduct * normalizedLineVector[2];
+            rotationAxis[0] = rotationMatrix.get(1, 0)[0] * normalizedLineVector[2]
+                    - rotationMatrix.get(2, 0)[0] * normalizedLineVector[1];
+            rotationAxis[1] = rotationMatrix.get(2, 0)[0] * normalizedLineVector[0]
+                    - rotationMatrix.get(0, 0)[0] * normalizedLineVector[2];
+            rotationAxis[2] = rotationMatrix.get(0, 0)[0] * normalizedLineVector[1]
+                    - rotationMatrix.get(1, 0)[0] * normalizedLineVector[0];
 
             // Calculate the angle between lineDirection and normalizedLineVector
             double angle = Math.acos(dotProduct);
