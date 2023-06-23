@@ -171,6 +171,8 @@ public class YourService extends KiboRpcService {
             lineVector[0] = targetPoint.get(0, 0)[0] - linePoint.get(0, 0)[0];
             lineVector[1] = targetPoint.get(1, 0)[0] - linePoint.get(1, 0)[0];
             lineVector[2] = targetPoint.get(2, 0)[0] - linePoint.get(2, 0)[0];
+            Log.i(TAG, "Relative to laser: " + lineVector[0] + ", " + lineVector[1] + ", "
+                    + lineVector[2]);
 
             // Normalize the line vector
             double lineVectorNorm = Math.sqrt(
@@ -187,14 +189,21 @@ public class YourService extends KiboRpcService {
                     + rotationMatrix.get(1, 0)[0] * normalizedLineVector[1]
                     + rotationMatrix.get(2, 0)[0] * normalizedLineVector[2];
 
-            // Calculate the rotation axis using cross product
+            // Calculate the rotation axis using cross product. normalizedLineVector cross
+            // rotationMatrix
             double[] rotationAxis = new double[3];
-            rotationAxis[0] = rotationMatrix.get(1, 0)[0] * normalizedLineVector[2]
-                    - rotationMatrix.get(2, 0)[0] * normalizedLineVector[1];
-            rotationAxis[1] = rotationMatrix.get(2, 0)[0] * normalizedLineVector[0]
-                    - rotationMatrix.get(0, 0)[0] * normalizedLineVector[2];
-            rotationAxis[2] = rotationMatrix.get(0, 0)[0] * normalizedLineVector[1]
-                    - rotationMatrix.get(1, 0)[0] * normalizedLineVector[0];
+            rotationAxis[0] = normalizedLineVector[1] * rotationMatrix.get(2, 0)[0]
+                    - normalizedLineVector[2] * rotationMatrix.get(1, 0)[0];
+            rotationAxis[1] = normalizedLineVector[2] * rotationMatrix.get(0, 0)[0] - normalizedLineVector[0]
+                    * rotationMatrix.get(2, 0)[0];
+            rotationAxis[2] = normalizedLineVector[0] * rotationMatrix.get(1, 0)[0]
+                    - normalizedLineVector[1] * rotationMatrix.get(0, 0)[0];
+            double rotationAxisNorm = Math.sqrt(rotationAxis[0] * rotationAxis[0]
+                    + rotationAxis[1] * rotationAxis[1]
+                    + rotationAxis[2] * rotationAxis[2]);
+            rotationAxis[0] /= rotationAxisNorm;
+            rotationAxis[1] /= rotationAxisNorm;
+            rotationAxis[2] /= rotationAxisNorm;
 
             // Calculate the angle between lineDirection and normalizedLineVector
             double angle = Math.acos(dotProduct);
@@ -211,6 +220,7 @@ public class YourService extends KiboRpcService {
 
             return quaternion;
         }
+
     }
 
     @Override
