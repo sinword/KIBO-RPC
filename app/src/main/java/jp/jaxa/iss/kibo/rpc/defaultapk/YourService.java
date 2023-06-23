@@ -212,12 +212,6 @@ public class YourService extends KiboRpcService {
             double halfAngle = angle / 2;
             double sinHalfAngle = Math.sin(halfAngle);
 
-            // Calculate the additional rotation around the x-axis
-            double xRotation = Math.atan2(rotationMatrix.get(2, 1)[0], rotationMatrix.get(2, 2)[0]);
-
-            // Update the rotation axis with the additional rotation around the x-axis
-            rotationAxis[0] += Math.tan(xRotation / 2);
-
             double[] quaternion = new double[4];
             quaternion[0] = Math.cos(halfAngle);
             quaternion[1] = rotationAxis[0] * sinHalfAngle;
@@ -361,20 +355,22 @@ public class YourService extends KiboRpcService {
         // LineRotatoin class will calculate the angle that kibo should turn
         LineRotation lineRotation = new LineRotation(linePoint, lineDirection, targetPoint);
         double[] rotaion = lineRotation.getQuaternion();
+        double[] conjugate = { rotaion[0], -rotaion[1], -rotaion[2], -rotaion[3] };
         Log.i(TAG, "quaternion: " + rotaion[0] + ", " + rotaion[1] + ", " + rotaion[2] + ", " + rotaion[3]);
 
         Quaternion originalOrientation = api.getRobotKinematics().getOrientation();
+        Log.i(TAG, "original orientation: " + originalOrientation.toString());
         double[] originalOrientationInDouble = { originalOrientation.getW(), originalOrientation.getX(),
                 originalOrientation.getY(), originalOrientation.getZ() };
         double[] orientation = multiplyQuaternions(rotaion, originalOrientationInDouble);
+        orientation = multiplyQuaternions(orientation, conjugate);
         if (orientation == null) {
             Log.i(TAG, "totalRotation is null");
             return;
         }
         Quaternion orientationQuaternion = new Quaternion((float) orientation[1], (float) orientation[2],
                 (float) orientation[3], (float) orientation[0]);
-        Log.i(TAG, "(x, y, z, w): " + orientation[1] + ", " + orientation[2] + ", " + orientation[3]
-                + ", " + orientation[0]);
+        Log.i(TAG, "orientation: " + orientationQuaternion.toString());
 
         api.saveMatImage(image, "target_" + targetNumber + "_" + config.count[targetNumber]
                 + ".png");
