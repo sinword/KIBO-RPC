@@ -6,7 +6,6 @@ import Basic.Vector3D;
 
 import Basic.Cuboid;
 import Basic.LineSegment;
-import Kibo.Point;
 
 public class MapManager{
     public Graph BasicGraph;
@@ -60,14 +59,6 @@ public class MapManager{
             }
         }
         return true;
-    }
-    public Point[] getShortestPath(Point from, Point to){
-        Vector3D[] result = getShortestPath(new Vector3D(from.x, from.y, from.z), new Vector3D(to.x, to.y, to.z));
-        Point[] result2 = new Point[result.length];
-        for (int i = 0; i < result.length; i++){
-            result2[i] = new Point(result[i].getX(), result[i].getY(), result[i].getZ());
-        }
-        return result2;
     }
 
     public Vector3D[] getShortestPath(Vector3D from, Vector3D to){

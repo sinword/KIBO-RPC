@@ -8,7 +8,7 @@ public class Graph{
     public final boolean IsBidirectional;
 
     public Graph(boolean isBidirectional){
-        this(new HashSet<Node>(), new HashSet<Edge>(), isBidirectional);
+        this(new HashSet<>(), new HashSet<>(), isBidirectional);
     }
 
     public Graph(Set<Node> nodes, Set<Edge> edges, boolean isBidirectional){

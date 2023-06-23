@@ -1,19 +1,10 @@
 package Basic;
 
-import Kibo.Point;
-
-
 public class Cuboid {
     public final Vector3D maxPoint;
     public final Vector3D minPoint;
 
 
-    public Cuboid(Point maxPoint, Point minPoint) {
-        this.maxPoint = new Vector3D(maxPoint.x, maxPoint.y, maxPoint.z);
-        this.minPoint = new Vector3D(minPoint.x, minPoint.y, minPoint.z);
-
-        
-    }
     public Cuboid(Vector3D maxPoint, Vector3D minPoint) {
         this.maxPoint = maxPoint;
         this.minPoint = minPoint;
