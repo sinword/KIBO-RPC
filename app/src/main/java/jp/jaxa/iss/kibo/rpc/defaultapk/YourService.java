@@ -13,6 +13,10 @@ import org.opencv.core.Mat;
 import org.opencv.core.MatOfDouble;
 import org.opencv.core.Point3;
 
+import Basic.Vector3D;
+import PathCaculation.MapConfig;
+import PathCaculation.MapManager;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +32,7 @@ import static org.opencv.core.Core.subtract;
 public class YourService extends KiboRpcService {
     private final String TAG = this.getClass().getSimpleName();
     private Config config;
+    private MapManager mapManager;
 
     /*
      * This class is used to store the configuration of the mission
@@ -223,17 +228,31 @@ public class YourService extends KiboRpcService {
 
     }
 
+    private Point convertFromVector3D(Vector3D vector) {
+        return new Point(vector.getX(), vector.getY(), vector.getZ());
+    }
+
     @Override
     protected void runPlan1() {
         Log.i(TAG, "Running plan 1");
 
         config = new Config();
+        MapConfig mapConfig = new MapConfig();
+        mapManager = new MapManager(mapConfig, 0.1);
+        Vector3D from = mapConfig.StartPoint;
+        Vector3D to = mapConfig.Point1;
+        Vector3D[] result = mapManager.getShortestPath(from, to);
 
         Log.i(TAG, "finish init");
 
         start();
 
-        goToPoint1();
+        Quaternion currentOrientation = api.getRobotKinematics().getOrientation();
+        for (Vector3D point: result) {
+            Log.i(TAG, "point: " + point.toString());
+            Point pointInPoint = convertFromVector3D(point);
+            api.moveTo(pointInPoint, currentOrientation, true);
+        }
 
         handleTarget(1);
 
@@ -250,17 +269,6 @@ public class YourService extends KiboRpcService {
     protected void runPlan3() {
         Log.i(TAG, "Running plan 3");
         runPlan1();
-    }
-
-    private void goToPoint1() {
-        // avoid KOZ
-        Point point = new Point(10.3f, -10.2f, 4.32f);
-        Quaternion quaternion = new Quaternion(0f, 0f, 0f, 1f);
-        api.moveTo(point, quaternion, true);
-        // point 1
-        point = new Point(11.2746d, -9.92284d, 5.2988d);
-        quaternion = new Quaternion(0.0f, 0.0f, -0.707f, 0.707f);
-        api.moveTo(point, quaternion, true);
     }
 
     private void start() {
