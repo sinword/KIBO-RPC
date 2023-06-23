@@ -341,27 +341,27 @@ public class YourService extends KiboRpcService {
 
         // LineRotatoin class will calculate the angle that kibo should turn
         LineRotation lineRotation = new LineRotation(linePoint, lineDirection, targetPoint);
-        double[] dr = lineRotation.getQuaternion();
-        Log.i(TAG, "quaternion: " + dr[0] + ", " + dr[1] + ", " + dr[2] + ", " + dr[3]);
+        double[] rotaion = lineRotation.getQuaternion();
+        Log.i(TAG, "quaternion: " + rotaion[0] + ", " + rotaion[1] + ", " + rotaion[2] + ", " + rotaion[3]);
 
         Quaternion originalOrientation = api.getRobotKinematics().getOrientation();
         double[] originalOrientationInDouble = { originalOrientation.getW(), originalOrientation.getX(),
                 originalOrientation.getY(), originalOrientation.getZ() };
-        double[] totalRotation = multiplyQuaternions(dr, originalOrientationInDouble);
-        if (totalRotation == null) {
+        double[] orientation = multiplyQuaternions(rotaion, originalOrientationInDouble);
+        if (orientation == null) {
             Log.i(TAG, "totalRotation is null");
             return;
         }
-        Quaternion totoalQuaternion = new Quaternion((float) totalRotation[1], (float) totalRotation[2],
-                (float) totalRotation[3], (float) totalRotation[0]);
-        Log.i(TAG, "(x, y, z, w): " + totalRotation[1] + ", " + totalRotation[2] + ", " + totalRotation[3]
-                + ", " + totalRotation[0]);
+        Quaternion orientationQuaternion = new Quaternion((float) orientation[1], (float) orientation[2],
+                (float) orientation[3], (float) orientation[0]);
+        Log.i(TAG, "(x, y, z, w): " + orientation[1] + ", " + orientation[2] + ", " + orientation[3]
+                + ", " + orientation[0]);
 
         api.saveMatImage(image, "target_" + targetNumber + "_" + config.count[targetNumber]
                 + ".png");
         config.count[targetNumber]++;
 
-        api.relativeMoveTo(new Point(0, 0, 0), totoalQuaternion, true);
+        api.relativeMoveTo(new Point(0, 0, 0), orientationQuaternion, true);
 
         image = api.getMatNavCam();
         api.saveMatImage(image, "target_" + targetNumber + "_" + config.count[targetNumber]
