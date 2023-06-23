@@ -218,15 +218,7 @@ public class YourService extends KiboRpcService {
             quaternion[2] = rotationAxis[1] * sinHalfAngle;
             quaternion[3] = rotationAxis[2] * sinHalfAngle;
 
-            double[] translation = {0, linePoint.get(0, 0)[0], linePoint.get(1, 0)[0], linePoint.get(2, 0)[0]};
-            double[] conjugate = {quaternion[0], -quaternion[1], -quaternion[2], -quaternion[3]};
-            double[] result = multiplyQuaternions(quaternion, multiplyQuaternions(translation, conjugate));
-            double norm = Math.sqrt(result[0] * result[0] + result[1] * result[1] + result[2] * result[2] + result[3] * result[3]);
-            for (int i = 0; i < 4; ++i) {
-                result[i] /= norm;
-            }
-
-            return result;
+            return quaternion;
         }
 
     }
@@ -370,8 +362,7 @@ public class YourService extends KiboRpcService {
         Log.i(TAG, "original orientation: " + originalOrientation.toString());
         double[] originalOrientationInDouble = { originalOrientation.getW(), originalOrientation.getX(),
                 originalOrientation.getY(), originalOrientation.getZ() };
-        double[] orientation = multiplyQuaternions(rotaion, originalOrientationInDouble);
-        orientation = multiplyQuaternions(orientation, conjugate);
+        double[] orientation = multiplyQuaternions(rotaion, multiplyQuaternions(originalOrientationInDouble, conjugate));
         double norm = Math.sqrt(orientation[0] * orientation[0] + orientation[1] * orientation[1]
                 + orientation[2] * orientation[2] + orientation[3] * orientation[3]);
         for (int i = 0; i < 4; ++i) {
