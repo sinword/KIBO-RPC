@@ -203,6 +203,12 @@ public class YourService extends KiboRpcService {
             double halfAngle = angle / 2;
             double sinHalfAngle = Math.sin(halfAngle);
 
+            // Calculate the additional rotation around the x-axis
+            double xRotation = Math.atan2(rotationMatrix.get(2, 1)[0], rotationMatrix.get(2, 2)[0]);
+
+            // Update the rotation axis with the additional rotation around the x-axis
+            rotationAxis[0] += Math.tan(xRotation / 2);
+
             double[] quaternion = new double[4];
             quaternion[0] = Math.cos(halfAngle);
             quaternion[1] = rotationAxis[0] * sinHalfAngle;
@@ -211,6 +217,7 @@ public class YourService extends KiboRpcService {
 
             return quaternion;
         }
+
     }
 
     @Override
