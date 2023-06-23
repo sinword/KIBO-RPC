@@ -1,11 +1,14 @@
 package jp.jaxa.iss.kibo.rpc.defaultapk;
 
 import jp.jaxa.iss.kibo.rpc.api.KiboRpcService;
+import gov.nasa.arc.astrobee.types.*;
+import gov.nasa.arc.astrobee.Result;
 import jp.jaxa.iss.kibo.rpc.defaultapk.Target.TargetManager;
 import jp.jaxa.iss.kibo.rpc.defaultapk.Target.TargetConfig;
-import gov.nasa.arc.astrobee.types.Point;
 import gov.nasa.arc.astrobee.types.Quaternion;
 import android.util.Log;
+import PathCaculation.*;
+import Basic.*;
 
 import org.opencv.core.Mat;
 
@@ -19,9 +22,10 @@ import PathCaculation.MapManager;
  */
 
 public class YourService extends KiboRpcService {
+    private MapConfig mapConfig = new MapConfig();
+    private MapManager mapManager = new MapManager(mapConfig, 0.1f);
     private final String TAG = this.getClass().getSimpleName();
     private TargetConfig targetConfig;
-    private MapManager mapManager;
 
     private Point convertFromVector3D(Vector3D vector) {
         return new Point(vector.getX(), vector.getY(), vector.getZ());
@@ -32,24 +36,18 @@ public class YourService extends KiboRpcService {
         Log.i(TAG, "Running plan 1");
 
         targetConfig = new TargetConfig(api.getNavCamIntrinsics());
-        MapConfig mapConfig = new MapConfig();
-        mapManager = new MapManager(mapConfig, 0.1);
-        Vector3D from = mapConfig.StartPoint;
-        Vector3D to = mapConfig.Point1;
-        Vector3D[] result = mapManager.getShortestPath(from, to);
 
         Log.i(TAG, "finish init");
 
         start();
 
-        Quaternion currentOrientation = api.getRobotKinematics().getOrientation();
-        for (Vector3D point : result) {
-            Log.i(TAG, "point: " + point.toString());
-            Point pointInPoint = convertFromVector3D(point);
-            api.moveTo(pointInPoint, currentOrientation, true);
-        }
+        moveToByShortestPath(mapConfig.StartPoint, mapConfig.Point1);
 
         handleTarget(1);
+
+        moveToByShortestPath(mapConfig.Point1, mapConfig.Point2);
+        Mat image = api.getMatNavCam();
+        api.saveMatImage(image, "Point2");
 
         api.reportMissionCompletion("Mission Complete!");
     }
@@ -64,6 +62,39 @@ public class YourService extends KiboRpcService {
     protected void runPlan3() {
         Log.i(TAG, "Running plan 3");
         runPlan1();
+        // moveToByShortestPath(mapConfig.Point1, mapConfig.Point2);
+
+    }
+
+    private void moveToByShortestPath(Transform transform, Transform to) {
+        moveToByShortestPath(transform.position, to);
+    }
+
+    private void moveToByShortestPath(Point point, Transform to) {
+        Vector3D[] result = mapManager.getShortestPath(new Vector3D(point), to.getVector3DPosition());
+        for (Vector3D vector3D : result) {
+            directMoveTo(vector3D.toPoint(), to.orientation);
+        }
+    }
+
+    private void directMoveTo(Transform transform) {
+        Point point = transform.position;
+        Quaternion quaternion = transform.orientation;
+        directMoveTo(point, quaternion);
+    }
+
+    private void directMoveTo(Point point) {
+        Quaternion quaternion = new Quaternion();
+        directMoveTo(point, quaternion);
+    }
+
+    private void directMoveTo(Point point, Quaternion quaternion) {
+        Result result;
+        int count = 0, max_count = 3;
+        do {
+            result = api.moveTo(point, quaternion, true);
+            count++;
+        } while (!result.hasSucceeded() && count < max_count);
     }
 
     private void start() {

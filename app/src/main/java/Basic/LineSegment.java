@@ -8,10 +8,12 @@ public class LineSegment {
         this.start = start;
         this.end = end;
     }
-    public double getLength(){
+
+    public double getLength() {
         return start.distance(end);
     }
-    public Vector3D getDirection(){
+
+    public Vector3D getDirection() {
         return new Vector3D(end.getX() - start.getX(), end.getY() - start.getY(), end.getZ() - start.getZ());
     }
 

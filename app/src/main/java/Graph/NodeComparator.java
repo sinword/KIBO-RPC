@@ -18,4 +18,3 @@ public class NodeComparator implements Comparator<Node> {
         return Double.compare(distance1, distance2);
     }
 }
-

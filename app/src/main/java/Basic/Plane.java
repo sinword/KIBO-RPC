@@ -21,6 +21,7 @@ public class Plane {
         this.v = v;
         this.w = u.crossProduct(v);
     }
+
     public boolean hasIntersection(final LineSegment line) {
         // 判斷線段是否與平面相交
         Vector3D lineDirection = line.getDirection();
