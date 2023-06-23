@@ -1,4 +1,4 @@
-package Basic;
+package jp.jaxa.iss.kibo.rpc.defaultapk.Basic;
 
 public class Vector3D {
     final private double x;

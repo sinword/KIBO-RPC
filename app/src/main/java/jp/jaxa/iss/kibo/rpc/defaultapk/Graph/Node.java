@@ -1,5 +1,5 @@
-package Graph;
-import Basic.Vector3D;
+package jp.jaxa.iss.kibo.rpc.defaultapk.Graph;
+import jp.jaxa.iss.kibo.rpc.defaultapk.Basic.Vector3D;
 import java.util.Objects;
 
 

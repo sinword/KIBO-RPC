@@ -1,4 +1,4 @@
-package Basic;
+package jp.jaxa.iss.kibo.rpc.defaultapk.Basic;
 
 public class LineSegment {
     public final Vector3D start;

@@ -1,4 +1,4 @@
-package Graph;
+package jp.jaxa.iss.kibo.rpc.defaultapk.Graph;
 
 import java.util.*;
 

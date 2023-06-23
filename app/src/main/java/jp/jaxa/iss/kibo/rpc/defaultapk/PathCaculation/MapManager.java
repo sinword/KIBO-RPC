@@ -1,12 +1,12 @@
-package PathCaculation;
+package jp.jaxa.iss.kibo.rpc.defaultapk.PathCaculation;
 
-import Graph.*;
+import jp.jaxa.iss.kibo.rpc.defaultapk.Graph.*;
 
-import Basic.Vector3D;
+import jp.jaxa.iss.kibo.rpc.defaultapk.Basic.Vector3D;
 
-import Basic.Cuboid;
-import Basic.LineSegment;
-import Kibo.Point;
+import jp.jaxa.iss.kibo.rpc.defaultapk.Basic.Cuboid;
+import jp.jaxa.iss.kibo.rpc.defaultapk.Basic.LineSegment;
+import jp.jaxa.iss.kibo.rpc.defaultapk.Kibo.Point;
 
 public class MapManager{
     public Graph BasicGraph;

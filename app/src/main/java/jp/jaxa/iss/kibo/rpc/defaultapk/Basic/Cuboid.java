@@ -1,6 +1,6 @@
-package Basic;
+package jp.jaxa.iss.kibo.rpc.defaultapk.Basic;
 
-import Kibo.Point;
+import jp.jaxa.iss.kibo.rpc.defaultapk.Kibo.Point;
 
 
 public class Cuboid {
