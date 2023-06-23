@@ -218,7 +218,15 @@ public class YourService extends KiboRpcService {
             quaternion[2] = rotationAxis[1] * sinHalfAngle;
             quaternion[3] = rotationAxis[2] * sinHalfAngle;
 
-            return quaternion;
+            double[] translation = {0, linePoint.get(0, 0)[0], linePoint.get(1, 0)[0], linePoint.get(2, 0)[0]};
+            double[] conjugate = {quaternion[0], -quaternion[1], -quaternion[2], -quaternion[3]};
+            double[] result = multiplyQuaternions(quaternion, multiplyQuaternions(translation, conjugate));
+            double norm = Math.sqrt(result[0] * result[0] + result[1] * result[1] + result[2] * result[2] + result[3] * result[3]);
+            for (int i = 0; i < 4; ++i) {
+                result[i] /= norm;
+            }
+
+            return result;
         }
 
     }
