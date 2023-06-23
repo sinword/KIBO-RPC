@@ -30,6 +30,8 @@ import static org.opencv.core.Core.gemm;
  */
 
 public class YourService extends KiboRpcService {
+    private MapConfig mapConfig = new MapConfig();
+    private MapManager mapManager = new MapManager(mapConfig, 0.1f);
     private final String TAG = this.getClass().getSimpleName();
     private Config config;
 
@@ -86,6 +88,38 @@ public class YourService extends KiboRpcService {
     protected void runPlan3() {
         Log.i(TAG, "Running plan 3");
         runPlan1();
+        //moveToByShortestPath(mapConfig.Point1, mapConfig.Point2);
+
+    }
+    private void moveToByShortestPath(Transform transform, Transform to){
+        moveToByShortestPath(transform.position, to);
+    }
+    private void moveToByShortestPath(Point point, Transform to){
+        Vector3D[] result = mapManager.getShortestPath(new Vector3D(point), to.getVector3DPosition());
+        for (Vector3D vector3D: result) {
+            directMoveTo(vector3D.toPoint(), to.orientation);
+        }
+    }
+    private void directMoveTo(Transform transform) {
+        Point point = transform.position;
+        Quaternion quaternion = transform.orientation;
+        directMoveTo(point, quaternion);
+    }
+    private void directMoveTo(Point point) {
+        Point point = transform.position;
+        Quaternion quaternion = Quaternion();
+        directMoveTo(point, quaternion);
+    }
+    private void directMoveTo(Point point, Quaternion quaternion)
+    {
+        Result result;
+        int count = 0, max_count = 3;
+        do
+        {
+            result = api.moveTo(point, quaternion, true);
+            count++;
+        }
+        while (!result.hasSucceeded() && count < max_count);
     }
 
 //    private void goToPoint1() {

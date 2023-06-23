@@ -1,4 +1,5 @@
 package Basic;
+import gov.nasa.arc.astrobee.types.Point;
 
 public class Vector3D {
     final private double x;
@@ -9,7 +10,14 @@ public class Vector3D {
         this.y = y;
         this.z = z;
     }
-
+    public Vector3D(Point point){
+        this.x = point.x;
+        this.y = point.y;
+        this.z = point.z;
+    }
+    public Point toPoint(){
+        return new Point(x, y, z);
+    }
     public double getX(){
         return x;
     }
