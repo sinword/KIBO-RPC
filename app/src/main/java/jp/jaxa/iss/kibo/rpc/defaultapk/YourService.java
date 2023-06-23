@@ -165,16 +165,7 @@ public class YourService extends KiboRpcService {
             this.targetPoint = targetPoint;
         }
 
-        /*
-         * This method will calculate the angle and axis of the rotation. This is an
-         * auxiliary method.
-         * 
-         * @return the angle and axis in the form of (angle, x, y, z)
-         * 
-         * The x, y, z represents the axis of rotation. You can call getQuaternion to
-         * get the quaternion directly.
-         */
-        private double[] getAngleAxis() {
+        private double[] getQuaternion() {
             // Calculate the rotation matrix
             Mat rotationMatrix = new Mat();
             Calib3d.Rodrigues(lineDirection, rotationMatrix);
@@ -190,45 +181,33 @@ public class YourService extends KiboRpcService {
             rotatedVector.get(0, 0, rotatedVectorComponents);
 
             // Calculate the angle and axis
+            double axisNorm = norm(lineDirection);
+
+            double angle = Math.acos(
+                    (lineDirection.get(0, 0)[0] * rotatedVectorComponents[0] +
+                            lineDirection.get(1, 0)[0] * rotatedVectorComponents[1] +
+                            lineDirection.get(2, 0)[0] * rotatedVectorComponents[2]) /
+                            (axisNorm * norm(rotatedVector)));
+
+            // Calculate the quaternion parameters using angle and trigonometric functions
+            double halfAngle = angle / 2;
+            double sinHalfAngle = Math.sin(halfAngle);
+            double cosHalfAngle = Math.cos(halfAngle);
+
             double[] axis = new double[3];
-            axis[0] = lineDirection.get(1, 0)[0] * rotatedVectorComponents[2]
-                    - lineDirection.get(2, 0)[0] * rotatedVectorComponents[1];
-            axis[1] = lineDirection.get(2, 0)[0] * rotatedVectorComponents[0]
-                    - lineDirection.get(0, 0)[0] * rotatedVectorComponents[2];
-            axis[2] = lineDirection.get(0, 0)[0] * rotatedVectorComponents[1]
-                    - lineDirection.get(1, 0)[0] * rotatedVectorComponents[0];
+            axis[0] = lineDirection.get(0, 0)[0] / axisNorm;
+            axis[1] = lineDirection.get(1, 0)[0] / axisNorm;
+            axis[2] = lineDirection.get(2, 0)[0] / axisNorm;
 
-            double normAxis = Math.sqrt(axis[0] * axis[0] + axis[1] * axis[1] + axis[2] * axis[2]);
-            if (normAxis != 0) {
-                axis[0] /= normAxis;
-                axis[1] /= normAxis;
-                axis[2] /= normAxis;
-            }
-
-            double dotProduct = lineDirection.get(0, 0)[0] * rotatedVectorComponents[0]
-                    + lineDirection.get(1, 0)[0] * rotatedVectorComponents[1]
-                    + lineDirection.get(2, 0)[0] * rotatedVectorComponents[2];
-            double angle = Math.acos(dotProduct / (norm(lineDirection) * norm(rotatedVector)));
-
-            return new double[] { angle, axis[0], axis[1], axis[2] };
-        }
-
-        /*
-         * This method will calculate the quaternion that represents the rotation
-         * 
-         * @return the quaternion in the form of (w, x, y, z)
-         */
-        private double[] getQuaternion() {
-            double[] angleAxis = getAngleAxis();
-            double angle = angleAxis[0];
-            double[] axis = new double[] { angleAxis[1], angleAxis[2], angleAxis[3] };
             double[] quaternion = new double[4];
-            quaternion[0] = Math.cos(angle / 2);
-            quaternion[1] = axis[0] * Math.sin(angle / 2);
-            quaternion[2] = axis[1] * Math.sin(angle / 2);
-            quaternion[3] = axis[2] * Math.sin(angle / 2);
+            quaternion[0] = cosHalfAngle;
+            quaternion[1] = axis[0] * sinHalfAngle;
+            quaternion[2] = axis[1] * sinHalfAngle;
+            quaternion[3] = axis[2] * sinHalfAngle;
+
             return quaternion;
         }
+
     }
 
     @Override
