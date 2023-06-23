@@ -166,48 +166,48 @@ public class YourService extends KiboRpcService {
         }
 
         private double[] getQuaternion() {
-            // Calculate the rotation matrix
+            // Calculate the vector from line point to target point
+            double[] lineVector = new double[3];
+            lineVector[0] = targetPoint.get(0, 0)[0] - linePoint.get(0, 0)[0];
+            lineVector[1] = targetPoint.get(1, 0)[0] - linePoint.get(1, 0)[0];
+            lineVector[2] = targetPoint.get(2, 0)[0] - linePoint.get(2, 0)[0];
+
+            // Normalize the line vector
+            double lineVectorNorm = Math.sqrt(
+                    lineVector[0] * lineVector[0] + lineVector[1] * lineVector[1] + lineVector[2] * lineVector[2]);
+            double[] normalizedLineVector = { lineVector[0] / lineVectorNorm, lineVector[1] / lineVectorNorm,
+                    lineVector[2] / lineVectorNorm };
+
+            // Calculate the rotation matrix using Rodrigues
             Mat rotationMatrix = new Mat();
             Calib3d.Rodrigues(lineDirection, rotationMatrix);
 
-            // Calculate the vector from line point to target point in the rotated
-            // coordinate system
-            Mat rotatedVector = new Mat();
-            subtract(targetPoint, linePoint, rotatedVector);
-            gemm(rotationMatrix, rotatedVector, 1, new Mat(), 0, rotatedVector);
+            // Calculate the dot product between lineDirection and normalizedLineVector
+            double dotProduct = rotationMatrix.get(0, 0)[0] * normalizedLineVector[0]
+                    + rotationMatrix.get(1, 0)[0] * normalizedLineVector[1]
+                    + rotationMatrix.get(2, 0)[0] * normalizedLineVector[2];
 
-            // Extract the components of the rotated vector
-            double[] rotatedVectorComponents = new double[3];
-            rotatedVector.get(0, 0, rotatedVectorComponents);
+            // Calculate the rotation axis using cross product
+            double[] rotationAxis = new double[3];
+            rotationAxis[0] = rotationMatrix.get(2, 1)[0] - dotProduct * normalizedLineVector[0];
+            rotationAxis[1] = -rotationMatrix.get(2, 0)[0] - dotProduct * normalizedLineVector[1];
+            rotationAxis[2] = rotationMatrix.get(1, 0)[0] + dotProduct * normalizedLineVector[2];
 
-            // Calculate the angle and axis
-            double axisNorm = norm(lineDirection);
+            // Calculate the angle between lineDirection and normalizedLineVector
+            double angle = Math.acos(dotProduct);
 
-            double angle = Math.acos(
-                    (lineDirection.get(0, 0)[0] * rotatedVectorComponents[0] +
-                            lineDirection.get(1, 0)[0] * rotatedVectorComponents[1] +
-                            lineDirection.get(2, 0)[0] * rotatedVectorComponents[2]) /
-                            (axisNorm * norm(rotatedVector)));
-
-            // Calculate the quaternion parameters using angle and trigonometric functions
+            // Calculate the quaternion parameters using angle and rotation axis
             double halfAngle = angle / 2;
             double sinHalfAngle = Math.sin(halfAngle);
-            double cosHalfAngle = Math.cos(halfAngle);
-
-            double[] axis = new double[3];
-            axis[0] = lineDirection.get(0, 0)[0] / axisNorm;
-            axis[1] = lineDirection.get(1, 0)[0] / axisNorm;
-            axis[2] = lineDirection.get(2, 0)[0] / axisNorm;
 
             double[] quaternion = new double[4];
-            quaternion[0] = cosHalfAngle;
-            quaternion[1] = axis[0] * sinHalfAngle;
-            quaternion[2] = axis[1] * sinHalfAngle;
-            quaternion[3] = axis[2] * sinHalfAngle;
+            quaternion[0] = Math.cos(halfAngle);
+            quaternion[1] = rotationAxis[0] * sinHalfAngle;
+            quaternion[2] = rotationAxis[1] * sinHalfAngle;
+            quaternion[3] = rotationAxis[2] * sinHalfAngle;
 
             return quaternion;
         }
-
     }
 
     @Override
@@ -367,6 +367,8 @@ public class YourService extends KiboRpcService {
         api.saveMatImage(image, "target_" + targetNumber + "_" + config.count[targetNumber]
                 + ".png");
         config.count[targetNumber]++;
+
+        // below are for debugging
         corners = new ArrayList<>();
         ids = new Mat();
         Aruco.detectMarkers(image, config.arucoDict, corners, ids);
