@@ -364,6 +364,10 @@ public class YourService extends KiboRpcService {
                 originalOrientation.getY(), originalOrientation.getZ() };
         double[] orientation = multiplyQuaternions(rotaion, originalOrientationInDouble);
         orientation = multiplyQuaternions(orientation, conjugate);
+        double norm = norm(orientation);
+        for (int i = 0; i < 4; ++i) {
+            orientation[i] /= norm;
+        }
         if (orientation == null) {
             Log.i(TAG, "totalRotation is null");
             return;
