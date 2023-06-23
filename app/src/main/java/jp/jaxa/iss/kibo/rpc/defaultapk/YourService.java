@@ -89,6 +89,7 @@ public class YourService extends KiboRpcService {
     }
 
     private void directMoveTo(Point point, Quaternion quaternion) {
+        Log.i(TAG, "move to " + point.toString());
         Result result;
         int count = 0, max_count = 3;
         do {
