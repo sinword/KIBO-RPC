@@ -66,7 +66,8 @@ public class Graph{
     private Node[] dijkstra(Node start, Node end) {
         Map<Node, Double> distances = new HashMap<>();
         Map<Node, Node> previous = new HashMap<>();
-        PriorityQueue<Node> nodes = new PriorityQueue<>(Comparator.comparingDouble(distances::get));
+        Comparator<Node> comparator = new NodeComparator(distances);
+        PriorityQueue<Node> nodes = new PriorityQueue<>(comparator);
         Set<Node> visited = new HashSet<>();
 
         for (Node node : this.nodes) {
