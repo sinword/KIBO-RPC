@@ -338,9 +338,12 @@ public class YourService extends KiboRpcService {
         Log.i(TAG, "Relative to camera: " + pos.x + ", " + pos.y + ", " + pos.z);
 
         Mat targetPoint = new Mat(3, 1, CvType.CV_64FC1);
-        targetPoint.put(0, 0, pos.z + config.NAV_CAM_POSITION[0]);
-        targetPoint.put(1, 0, pos.x + config.NAV_CAM_POSITION[1]);
-        targetPoint.put(2, 0, pos.y + config.NAV_CAM_POSITION[2]);
+        // targetPoint.put(0, 0, pos.z + config.NAV_CAM_POSITION[0]);
+        // targetPoint.put(1, 0, pos.x + config.NAV_CAM_POSITION[1]);
+        // targetPoint.put(2, 0, pos.y + config.NAV_CAM_POSITION[2]);
+        targetPoint.put(0, 0, pos.z);
+        targetPoint.put(1, 0, pos.x);
+        targetPoint.put(2, 0, pos.y);
         Log.i(TAG, "Relative to center of kibo in its cords: " + targetPoint.dump());
         // (1, 0, 0) represents the direction of the laser which is shoot forward
         Mat lineDirection = new Mat(3, 1, CvType.CV_64FC1);
