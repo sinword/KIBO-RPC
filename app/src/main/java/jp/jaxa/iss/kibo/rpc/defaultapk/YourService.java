@@ -3,6 +3,7 @@ package jp.jaxa.iss.kibo.rpc.defaultapk;
 import jp.jaxa.iss.kibo.rpc.api.KiboRpcService;
 import gov.nasa.arc.astrobee.types.*;
 import gov.nasa.arc.astrobee.Result;
+import gov.nasa.arc.astrobee.Kinematics;
 import android.util.Log;
 import PathCaculation.*;
 import Basic.*;
@@ -21,7 +22,10 @@ import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 
 import static org.opencv.core.Core.gemm;
 
@@ -93,21 +97,7 @@ public class YourService extends KiboRpcService {
         //moveToByShortestPath(mapConfig.Point1, mapConfig.Point2);
 
     }
-    private void handleNextDestination(){
-        List<Integer> activatedTargets = api.getActivatedTargets();
-        if(!QRCodeDown){
-            activatedTargets.add(0);
-        }
-        int target = getNextDestination(activatedTargets);
-        if(target == 0){
-            moveToQRCodePoint();
-            QRCodeDown = true;
-        }
-        else{
-            moveToPointNumber(target);
-            //handleTarget(target);
-        }
-    }
+
 
     private void moveToQRCodePoint(){
         moveToFromCurrentPosition(mapConfig.QRCodePoint);
@@ -120,22 +110,8 @@ public class YourService extends KiboRpcService {
         moveToFromCurrentPosition(des);
     }
 
-    private Integer getNextDestination(List<Integer> activatedTargets){
-        Map<Integer, double> DistanceMap = getDistanceMap();
-        int minDistance = 100000;
-        int target = -1;
-        for (int i = 0; i < activatedTargets.size(); i++) {
-            int distance = DistanceMap.get(activatedTargets[i]);
-            if (distance < minDistance){
-                minDistance = distance;
-                target = activatedTargets[i];
-            }
-        }
-        return target;
-    }
-
-    private Map<Integer, double> getDistanceMap(){
-        Map<Integer, double> DistanceMap = new HashMap<Integer, double>();
+    private Map<Integer, Double> getDistanceMap(){
+        Map<Integer, Double> DistanceMap = new HashMap<Integer, Double>();
         for (int i = 1; i <= 7; i++) {
             DistanceMap.put(i, getDistanceToPosition(getPointFromID(i)));
         }
@@ -148,11 +124,13 @@ public class YourService extends KiboRpcService {
         return mapConfig.AllPoints[id - 1];
     }
     private double getDistanceToPosition(Transform transform){
-        Vector3D[] path = mapManager.getShortestPath(Vector3D(getRobotKinematics().getPosition()), transform.getVector3DPosition());
+        Kinematics kinematics = api.getRobotKinematics();
+        Point point = kinematics.getPosition();
+        Vector3D[] path = mapManager.getShortestPath(new Vector3D(point), transform.getVector3DPosition());
         return mapManager.getPathLength(path);
     }
     private void moveToFromCurrentPosition(Transform to){
-        Kinematics kinematics = getRobotKinematics()
+        Kinematics kinematics = api.getRobotKinematics();
         Point point = kinematics.getPosition();
         moveToByShortestPath(point, to);
     }
