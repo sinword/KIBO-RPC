@@ -16,20 +16,21 @@ import jp.jaxa.iss.kibo.rpc.defaultapk.Target.TargetConfig;
 public class TargetManager {
     private static final String TAG = "TargetManager";
 
-    private static void inputPoints(Mat targetPoint, Point3 pos, Mat lineDirection, Mat linePoint) {
-        targetPoint.put(0, 0, pos.z + TargetConfig.NAV_CAM_POSITION[0]);
-        targetPoint.put(1, 0, pos.x + TargetConfig.NAV_CAM_POSITION[1]);
-        targetPoint.put(2, 0, pos.y + TargetConfig.NAV_CAM_POSITION[2]);
+    private static void inputPoints(double[] targetPoint, Point3 pos, double[] lineDirection, double[] linePoint) {
+        targetPoint[0] = pos.z + TargetConfig.NAV_CAM_POSITION[0];
+        targetPoint[1] = pos.x + TargetConfig.NAV_CAM_POSITION[1];
+        targetPoint[2] = pos.y + TargetConfig.NAV_CAM_POSITION[2];
+        Log.i(TAG, "Relative to center of kibo in its cords: " + targetPoint[0] + ", " + targetPoint[1] + ", "
+                + targetPoint[2]);
 
-        Log.i(TAG, "Relative to center of kibo in its cords: " + targetPoint.dump());
         // (1, 0, 0) represents the direction of the laser which is shoot forward
-        lineDirection.put(0, 0, 1);
-        lineDirection.put(1, 0, 0);
-        lineDirection.put(2, 0, 0);
+        lineDirection[0] = 1;
+        lineDirection[1] = 0;
+        lineDirection[2] = 0;
 
-        for (int i = 0; i < 3; ++i) {
-            linePoint.put(i, 0, TargetConfig.LASER_POSITION[i]);
-        }
+        linePoint[0] = TargetConfig.LASER_POSITION[0];
+        linePoint[1] = TargetConfig.LASER_POSITION[1];
+        linePoint[2] = TargetConfig.LASER_POSITION[2];
     }
 
     private static double[] calculateNewOrientation(double[] rotaion, Quaternion originalOrientation) {
@@ -39,7 +40,8 @@ public class TargetManager {
         Log.i(TAG, "original orientation: " + originalOrientation.toString());
         double[] originalOrientationInDouble = { originalOrientation.getW(), originalOrientation.getX(),
                 originalOrientation.getY(), originalOrientation.getZ() };
-        double[] orientation = multiplyQuaternions(rotaion, multiplyQuaternions(originalOrientationInDouble, conjugate));
+        double[] orientation = multiplyQuaternions(rotaion,
+                multiplyQuaternions(originalOrientationInDouble, conjugate));
         double norm = Math.sqrt(orientation[0] * orientation[0] + orientation[1] * orientation[1]
                 + orientation[2] * orientation[2] + orientation[3] * orientation[3]);
         for (int i = 0; i < 4; ++i) {
@@ -61,7 +63,6 @@ public class TargetManager {
         List<Mat> corners = new ArrayList<>();
         Mat ids = new Mat();
         Aruco.detectMarkers(image, TargetConfig.arucoDict, corners, ids);
-
         if (ids.size().empty()) {
             Log.i(TAG, "No markers detected");
             return new Quaternion(0, 0, 0, 1);
@@ -81,14 +82,14 @@ public class TargetManager {
         Point3 pos = estimation.getEstimatedPos();
         Log.i(TAG, "Relative to camera: " + pos.x + ", " + pos.y + ", " + pos.z);
 
-        Mat targetPoint = new Mat(3, 1, CvType.CV_64FC1);
-        Mat lineDirection = new Mat(3, 1, CvType.CV_64FC1);
-        Mat linePoint = new Mat(3, 1, CvType.CV_64FC1);
+        double[] targetPoint = new double[3];
+        double[] lineDirection = new double[3];
+        double[] linePoint = new double[3];
         inputPoints(targetPoint, pos, lineDirection, linePoint);
 
         // LineRotatoin class will calculate the angle that kibo should turn
-        LineRotation lineRotation = new LineRotation(linePoint, lineDirection, targetPoint);
-        double[] orientation = calculateNewOrientation(lineRotation.getQuaternion(), originalOrientation);
+        double[] orientation = calculateNewOrientation(
+                LineRotation.getQuaternion(linePoint, lineDirection, targetPoint), originalOrientation);
         Quaternion orientationQuaternion = new Quaternion((float) orientation[1], (float) orientation[2],
                 (float) orientation[3], (float) orientation[0]);
         Log.i(TAG, "orientation: " + orientationQuaternion.toString());
@@ -106,7 +107,7 @@ public class TargetManager {
      *
      * @return the result of the multiplication
      */
-    private static double[] multiplyQuaternions(double[] q1, double[] q2) {
+    public static double[] multiplyQuaternions(double[] q1, double[] q2) {
         if (q1.length != 4 || q2.length != 4) {
             Log.i(TAG, "Invalid quaternion length");
             return null;

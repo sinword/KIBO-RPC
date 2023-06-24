@@ -26,7 +26,7 @@ import PathCaculation.MapManager;
 
 public class YourService extends KiboRpcService {
     private MapConfig mapConfig = new MapConfig();
-    private MapManager mapManager = new MapManager(mapConfig, 0.1f);
+    private MapManager mapManager = new MapManager(mapConfig, 0.12f);
     private boolean QRCodeDown = false;
     private final String TAG = this.getClass().getSimpleName();
     private TargetConfig targetConfig;

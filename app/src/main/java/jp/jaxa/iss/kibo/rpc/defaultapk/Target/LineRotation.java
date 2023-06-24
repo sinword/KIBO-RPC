@@ -1,85 +1,74 @@
 package jp.jaxa.iss.kibo.rpc.defaultapk.Target;
 
+import android.support.compat.R.string;
 import android.util.Log;
 
 import org.opencv.core.Mat;
 import org.opencv.calib3d.Calib3d;
 
 public class LineRotation {
-    private final String TAG = "LineRotation";
-    private Mat linePoint;
-    private Mat lineDirection;
-    private Mat targetPoint;
+        private static final String TAG = "LineRotation";
 
-    /*
-     * This is the constructor of LineRotation class. Note that 3 parms are all in
-     * Mat form.
-     * 
-     * @param linePoint the point on the line
-     * 
-     * @param lineDirection the direction of the line
-     * 
-     * @param targetPoint the target point
-     */
-    public LineRotation(Mat linePoint, Mat lineDirection, Mat targetPoint) {
-        this.linePoint = linePoint;
-        this.lineDirection = lineDirection;
-        this.targetPoint = targetPoint;
-    }
+        private static double[] normalize(double[] vector) {
+                double norm = Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1] + vector[2] * vector[2]);
+                double[] normalizedVector = new double[3];
+                normalizedVector[0] = vector[0] / norm;
+                normalizedVector[1] = vector[1] / norm;
+                normalizedVector[2] = vector[2] / norm;
+                return normalizedVector;
+        }
 
-    public double[] getQuaternion() {
-        // Calculate the vector from line point to target point
-        double[] lineVector = new double[3];
-        lineVector[0] = targetPoint.get(0, 0)[0] - linePoint.get(0, 0)[0];
-        lineVector[1] = targetPoint.get(1, 0)[0] - linePoint.get(1, 0)[0];
-        lineVector[2] = targetPoint.get(2, 0)[0] - linePoint.get(2, 0)[0];
-        Log.i(TAG, "Relative to laser: " + lineVector[0] + ", " + lineVector[1] + ", "
-                + lineVector[2]);
+        public static double[] getQuaternion(double[] linePoint, double[] lineDirection, double[] targetPoint) {
+                double[] lineVector = new double[3];
+                lineVector[0] = targetPoint[0] - linePoint[0];
+                lineVector[1] = targetPoint[1] - linePoint[1];
+                lineVector[2] = targetPoint[2] - linePoint[2];
+                double[] normalizedLineVector = normalize(lineVector);
 
-        // Normalize the line vector
-        double lineVectorNorm = Math.sqrt(
-                lineVector[0] * lineVector[0] + lineVector[1] * lineVector[1] + lineVector[2] * lineVector[2]);
-        double[] normalizedLineVector = { lineVector[0] / lineVectorNorm, lineVector[1] / lineVectorNorm,
-                lineVector[2] / lineVectorNorm };
+                double[] noramlizedLineDirection = normalize(lineDirection);
 
-        // Calculate the rotation matrix using Rodrigues
-        Mat rotationMatrix = new Mat();
-        Calib3d.Rodrigues(lineDirection, rotationMatrix);
+                // Calculate the dot product between noramlizedLineDirection and
+                // normalizedLineVector
+                double dotProduct = noramlizedLineDirection[0] * normalizedLineVector[0]
+                                + noramlizedLineDirection[1] * normalizedLineVector[1]
+                                + noramlizedLineDirection[2] * normalizedLineVector[2];
 
-        // Calculate the dot product between lineDirection and normalizedLineVector
-        double dotProduct = rotationMatrix.get(0, 0)[0] * normalizedLineVector[0]
-                + rotationMatrix.get(1, 0)[0] * normalizedLineVector[1]
-                + rotationMatrix.get(2, 0)[0] * normalizedLineVector[2];
+                // Calculate the rotation axis using cross product. normalizedLineVector cross
+                // noramlizedLineDirection
+                double[] rotationAxis = new double[3];
+                rotationAxis[0] = normalizedLineVector[1] * noramlizedLineDirection[2]
+                                - normalizedLineVector[2] * noramlizedLineDirection[1];
+                rotationAxis[1] = normalizedLineVector[2] * noramlizedLineDirection[0]
+                                - normalizedLineVector[0] * noramlizedLineDirection[2];
+                rotationAxis[2] = normalizedLineVector[0] * noramlizedLineDirection[1]
+                                - normalizedLineVector[1] * noramlizedLineDirection[0];
+                double rotationAxisNorm = Math.sqrt(rotationAxis[0] * rotationAxis[0]
+                                + rotationAxis[1] * rotationAxis[1]
+                                + rotationAxis[2] * rotationAxis[2]);
+                rotationAxis[0] /= rotationAxisNorm;
+                rotationAxis[1] /= rotationAxisNorm;
+                rotationAxis[2] /= rotationAxisNorm;
 
-        // Calculate the rotation axis using cross product. normalizedLineVector cross
-        // rotationMatrix
-        double[] rotationAxis = new double[3];
-        rotationAxis[0] = normalizedLineVector[1] * rotationMatrix.get(2, 0)[0]
-                - normalizedLineVector[2] * rotationMatrix.get(1, 0)[0];
-        rotationAxis[1] = normalizedLineVector[2] * rotationMatrix.get(0, 0)[0] - normalizedLineVector[0]
-                * rotationMatrix.get(2, 0)[0];
-        rotationAxis[2] = normalizedLineVector[0] * rotationMatrix.get(1, 0)[0]
-                - normalizedLineVector[1] * rotationMatrix.get(0, 0)[0];
-        double rotationAxisNorm = Math.sqrt(rotationAxis[0] * rotationAxis[0]
-                + rotationAxis[1] * rotationAxis[1]
-                + rotationAxis[2] * rotationAxis[2]);
-        rotationAxis[0] /= rotationAxisNorm;
-        rotationAxis[1] /= rotationAxisNorm;
-        rotationAxis[2] /= rotationAxisNorm;
+                // Calculate the angle between lineDirection and normalizedLineVector
+                double angle = Math.acos(dotProduct);
 
-        // Calculate the angle between lineDirection and normalizedLineVector
-        double angle = Math.acos(dotProduct);
+                // Calculate the quaternion parameters using angle and rotation axis
+                double halfAngle = angle / 2;
+                double sinHalfAngle = Math.sin(halfAngle);
 
-        // Calculate the quaternion parameters using angle and rotation axis
-        double halfAngle = angle / 2;
-        double sinHalfAngle = Math.sin(halfAngle);
+                double[] quaternion = new double[4];
+                quaternion[0] = Math.cos(halfAngle);
+                quaternion[1] = rotationAxis[0] * sinHalfAngle;
+                quaternion[2] = rotationAxis[1] * sinHalfAngle;
+                quaternion[3] = rotationAxis[2] * sinHalfAngle;
 
-        double[] quaternion = new double[4];
-        quaternion[0] = Math.cos(halfAngle);
-        quaternion[1] = rotationAxis[0] * sinHalfAngle;
-        quaternion[2] = rotationAxis[1] * sinHalfAngle;
-        quaternion[3] = rotationAxis[2] * sinHalfAngle;
+                double norm = Math.sqrt(quaternion[0] * quaternion[0] + quaternion[1] * quaternion[1]
+                                + quaternion[2] * quaternion[2] + quaternion[3] * quaternion[3]);
+                quaternion[0] /= norm;
+                quaternion[1] /= norm;
+                quaternion[2] /= norm;
+                quaternion[3] /= norm;
 
-        return quaternion;
-    }
+                return quaternion;
+        }
 }
