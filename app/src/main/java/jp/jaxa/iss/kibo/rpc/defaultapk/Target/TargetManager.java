@@ -32,6 +32,23 @@ public class TargetManager {
         }
     }
 
+    private static double[] calculateNewOrientation(double[] rotaion, Quaternion originalOrientation) {
+        double[] conjugate = { rotaion[0], -rotaion[1], -rotaion[2], -rotaion[3] };
+        Log.i(TAG, "quaternion: " + rotaion[0] + ", " + rotaion[1] + ", " + rotaion[2] + ", " + rotaion[3]);
+
+        Log.i(TAG, "original orientation: " + originalOrientation.toString());
+        double[] originalOrientationInDouble = { originalOrientation.getW(), originalOrientation.getX(),
+                originalOrientation.getY(), originalOrientation.getZ() };
+        double[] orientation = multiplyQuaternions(rotaion, multiplyQuaternions(originalOrientationInDouble, conjugate));
+        double norm = Math.sqrt(orientation[0] * orientation[0] + orientation[1] * orientation[1]
+                + orientation[2] * orientation[2] + orientation[3] * orientation[3]);
+        for (int i = 0; i < 4; ++i) {
+            orientation[i] /= norm;
+        }
+
+        return orientation;
+    }
+
     public static Quaternion calibrateLocation(Mat image, Quaternion originalOrientation) {
         Log.i(TAG, "In calibrateLocation");
         if (image.empty()) {
@@ -71,23 +88,7 @@ public class TargetManager {
 
         // LineRotatoin class will calculate the angle that kibo should turn
         LineRotation lineRotation = new LineRotation(linePoint, lineDirection, targetPoint);
-        double[] rotaion = lineRotation.getQuaternion();
-        double[] conjugate = { rotaion[0], -rotaion[1], -rotaion[2], -rotaion[3] };
-        Log.i(TAG, "quaternion: " + rotaion[0] + ", " + rotaion[1] + ", " + rotaion[2] + ", " + rotaion[3]);
-
-        Log.i(TAG, "original orientation: " + originalOrientation.toString());
-        double[] originalOrientationInDouble = { originalOrientation.getW(), originalOrientation.getX(),
-                originalOrientation.getY(), originalOrientation.getZ() };
-        double[] orientation = multiplyQuaternions(rotaion, multiplyQuaternions(originalOrientationInDouble, conjugate));
-        double norm = Math.sqrt(orientation[0] * orientation[0] + orientation[1] * orientation[1]
-                + orientation[2] * orientation[2] + orientation[3] * orientation[3]);
-        for (int i = 0; i < 4; ++i) {
-            orientation[i] /= norm;
-        }
-        if (orientation == null) {
-            Log.i(TAG, "totalRotation is null");
-            return new Quaternion(0, 0, 0, 1);
-        }
+        double[] orientation = calculateNewOrientation(lineRotation.getQuaternion(), originalOrientation);
         Quaternion orientationQuaternion = new Quaternion((float) orientation[1], (float) orientation[2],
                 (float) orientation[3], (float) orientation[0]);
         Log.i(TAG, "orientation: " + orientationQuaternion.toString());
