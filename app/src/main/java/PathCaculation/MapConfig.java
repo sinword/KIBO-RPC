@@ -15,6 +15,8 @@ public class MapConfig implements IMapConfig {
     public final Transform Point6 = new Transform(new Point(11.355, -8.9929, 4.7818), new Quaternion(0, 0, 0, 1));
     public final Transform Point7 = new Transform(new Point(11.369, -8.5518, 4.48), new Quaternion(0, 0.707f, 0, 0.707f));
 
+    public final Transform QRCodePoint = new Transform(new Point(11.381944, -8.566172, 3.76203), new Quaternion(0, 0, 0, 1));
+
     public final Transform[] AllPoints = new Transform[]{Point1, Point2, Point3, Point4, Point5, Point6, Point7};
 
 

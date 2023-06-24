@@ -92,6 +92,24 @@ public class YourService extends KiboRpcService {
         //moveToByShortestPath(mapConfig.Point1, mapConfig.Point2);
 
     }
+    
+    private void moveToQRCodePoint(){
+        moveToFromCurrentPosition(mapConfig.QRCodePoint);
+    }
+    private void moveToGoalPoint(){
+        moveToFromCurrentPosition(mapConfig.GoalPoint);
+    }
+    private void moveToPointNumber(int pointNumber){
+        Transform des = mapConfig.AllPoints[pointNumber];
+        moveToFromCurrentPosition(des);
+    }
+
+
+    private void moveToFromCurrentPosition(Transform to){
+        Kinematics kinematics = getRobotKinematics()
+        Point point = kinematics.getPosition();
+        moveToByShortestPath(point, to);
+    }
     private void moveToByShortestPath(Transform transform, Transform to){
         moveToByShortestPath(transform.position, to);
     }
