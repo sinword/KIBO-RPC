@@ -14,7 +14,6 @@ import org.opencv.core.Mat;
 
 import java.util.List;
 
-import Basic.Vector3D;
 import PathCaculation.MapConfig;
 import PathCaculation.MapManager;
 
@@ -25,7 +24,10 @@ import PathCaculation.MapManager;
 
 public class YourService extends KiboRpcService {
     private MapConfig mapConfig = new MapConfig();
-    private MapManager mapManager = new MapManager(mapConfig, 0.1f);
+    private MapManager mapManager = new MapManager(mapConfig,
+            0.1f);private Map<Integer,double>DistanceMap=new HashMap<Integer,double>(); // key: point id, value:
+                                                                                        // distance from Astrobee Point
+    private boolean QRCodeDown = false;
     private final String TAG = this.getClass().getSimpleName();
     private TargetConfig targetConfig;
 
@@ -70,20 +72,38 @@ public class YourService extends KiboRpcService {
 
     private void handleActivatedTarget() {
         List<Integer> activatedTargets = api.getActiveTargets();
-        double[] distances = new double[10];
-        for (Integer targetID : activatedTargets) {
-            Log.i(TAG, "target " + targetID + " activated");
-            distances[targetID] = getDistanceToPosition(getPointFromID(targetID));
+        int target = getNextDestination(activatedTargets);
+        if (target == 0 && !QRCodeDown) {
+            moveToQRCodePoint();
+            QRCodeDown = true;
+        } else {
+            moveToPointNumber(target);
+            handleTarget(target);
         }
-        int minIndex = 0;
-        for (int i = 1; i < distances.length; i++) {
-            if (distances[i] < distances[minIndex]) {
-                minIndex = i;
+    }
+
+    private Integer getNextDestination(List<Integer> activatedTargets){
+        updateDistanceMap();
+        int minDistance = 100000;
+        int target = 0;
+        if(!QRCodeDown){
+            activatedTargets.add(0);
+        }
+        for (int i = 0; i < activatedTargets.size(); i++) {
+            int distance = DistanceMap.get(activatedTargets.get(i));
+            if (distance < minDistance){
+                minDistance = distance;
+                target = activatedTargets.get(i);
             }
         }
-        moveToPointNumber(minIndex);
+        return target;
+    }
 
-        handleTarget(minIndex);
+    private void updateDistanceMap(){
+        for (int i = 1; i <= 7; i++) {
+            DistanceMap.put(i, getDistanceToPosition(getPointFromID(i)));
+        }
+        DistanceMap.put(0, getDistanceToPosition(mapConfig.QRCodePoint));
     }
 
     private void moveToQRCodePoint() {
@@ -101,7 +121,7 @@ public class YourService extends KiboRpcService {
     }
 
     private Transform getPointFromID(int id) {
-        return mapConfig.AllPoints[id];
+        return mapConfig.AllPoints[id - 1];
     }
 
     private double getDistanceToPosition(Transform transform) {
@@ -110,7 +130,7 @@ public class YourService extends KiboRpcService {
         return mapManager.getPathLength(path);
     }
 
-    private void moveToFromCurrentPosition(Transform to){
+    private void moveToFromCurrentPosition(Transform to) {
         Kinematics kinematics = api.getRobotKinematics();
         Point point = kinematics.getPosition();
         moveToByShortestPath(point, to);
