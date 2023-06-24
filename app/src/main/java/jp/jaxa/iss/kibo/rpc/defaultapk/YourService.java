@@ -7,10 +7,12 @@ import jp.jaxa.iss.kibo.rpc.defaultapk.Target.TargetManager;
 import jp.jaxa.iss.kibo.rpc.defaultapk.Target.TargetConfig;
 import gov.nasa.arc.astrobee.types.Quaternion;
 import android.util.Log;
-import PathCaculation.*;
+import gov.nasa.arc.astrobee.Kinematics;
 import Basic.*;
 
 import org.opencv.core.Mat;
+
+import java.util.List;
 
 import Basic.Vector3D;
 import PathCaculation.MapConfig;
@@ -41,13 +43,15 @@ public class YourService extends KiboRpcService {
 
         start();
 
-        moveToByShortestPath(mapConfig.StartPoint, mapConfig.Point1);
+        int count = 0;
+        while (api.getActiveTargets().size() != 0 && count < 3) {
+            handleActivatedTarget();
+            count++;
+        }
 
-        handleTarget(1);
+        moveToQRCodePoint();
 
-        moveToByShortestPath(mapConfig.Point1, mapConfig.Point2);
-        Mat image = api.getMatNavCam();
-        api.saveMatImage(image, "Point2");
+        moveToGoalPoint();
 
         api.reportMissionCompletion("Mission Complete!");
     }
@@ -62,45 +66,52 @@ public class YourService extends KiboRpcService {
     protected void runPlan3() {
         Log.i(TAG, "Running plan 3");
         runPlan1();
-        // moveToByShortestPath(mapConfig.Point1, mapConfig.Point2);
-
     }
-    private void handleActivatedTarget(){
-        List<Integer> activatedTargets = getActivatedTargets();
+
+    private void handleActivatedTarget() {
+        List<Integer> activatedTargets = api.getActiveTargets();
         double[] distances = new double[10];
-        for (Integer targetID: activatedTargets) {
+        for (Integer targetID : activatedTargets) {
+            Log.i(TAG, "target " + targetID + " activated");
             distances[targetID] = getDistanceToPosition(getPointFromID(targetID));
         }
         int minIndex = 0;
         for (int i = 1; i < distances.length; i++) {
-            if(distances[i] < distances[minIndex]){
+            if (distances[i] < distances[minIndex]) {
                 minIndex = i;
             }
         }
         moveToPointNumber(minIndex);
+
+        handleTarget(minIndex);
     }
 
-    private void moveToQRCodePoint(){
+    private void moveToQRCodePoint() {
         moveToFromCurrentPosition(mapConfig.QRCodePoint);
     }
-    private void moveToGoalPoint(){
+
+    private void moveToGoalPoint() {
+        api.notifyGoingToGoal();
         moveToFromCurrentPosition(mapConfig.GoalPoint);
     }
-    private void moveToPointNumber(int pointNumber){
+
+    private void moveToPointNumber(int pointNumber) {
         Transform des = getPointFromID(pointNumber);
         moveToFromCurrentPosition(des);
     }
 
-
-    private Transform getPointFromID(int id){
-        return mapConfig.AllPoints[id - 1];
+    private Transform getPointFromID(int id) {
+        return mapConfig.AllPoints[id];
     }
-    private double getDistanceToPosition(Transform transform){
-        Vector3D[] path = mapManager.getShortestPath(Vector3D(getRobotKinematics().getPosition()), transform.getVector3DPosition());
+
+    private double getDistanceToPosition(Transform transform) {
+        Vector3D[] path = mapManager.getShortestPath(new Vector3D(api.getRobotKinematics().getPosition()),
+                transform.getVector3DPosition());
         return mapManager.getPathLength(path);
     }
+
     private void moveToFromCurrentPosition(Transform to){
-        Kinematics kinematics = getRobotKinematics()
+        Kinematics kinematics = api.getRobotKinematics();
         Point point = kinematics.getPosition();
         moveToByShortestPath(point, to);
     }
