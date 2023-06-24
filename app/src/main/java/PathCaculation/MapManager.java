@@ -61,8 +61,16 @@ public class MapManager {
         return true;
     }
 
-    public Vector3D[] getShortestPath(Vector3D from, Vector3D to) {
-        if (!NotInKOZ(from) || !NotInKOZ(to)) {
+    public double getPathLength(Vector3D[] path){
+        double result = 0;
+        for (int i = 0; i < path.length - 1; i++){
+            result += path[i].distance(path[i + 1]);
+        }
+        return result;
+    }
+
+    public Vector3D[] getShortestPath(Vector3D from, Vector3D to){
+        if (!NotInKOZ(from) || !NotInKOZ(to)){
             throw new IllegalArgumentException("from point or to point is in KOZ");
         }
         Graph TempGraph = BasicGraph.copy();
