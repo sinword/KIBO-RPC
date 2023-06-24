@@ -11,18 +11,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import gov.nasa.arc.astrobee.types.Quaternion;
+import jp.jaxa.iss.kibo.rpc.defaultapk.Target.LineRotation;
 import jp.jaxa.iss.kibo.rpc.defaultapk.Target.TargetConfig;
 
 public class TargetManager {
     private static final String TAG = "TargetManager";
 
     private static void inputPoints(double[] targetPoint, Point3 pos, double[] lineDirection, double[] linePoint) {
-        targetPoint[0] = pos.z;
-        targetPoint[1] = pos.x;
-        targetPoint[2] = pos.y;
-        // targetPoint[0] = pos.z + TargetConfig.NAV_CAM_POSITION[0];
-        // targetPoint[1] = pos.x + TargetConfig.NAV_CAM_POSITION[1];
-        // targetPoint[2] = pos.y + TargetConfig.NAV_CAM_POSITION[2];
+        targetPoint[0] = pos.z + TargetConfig.NAV_CAM_POSITION[0];
+        targetPoint[1] = pos.x + TargetConfig.NAV_CAM_POSITION[1];
+        targetPoint[2] = pos.y + TargetConfig.NAV_CAM_POSITION[2];
         Log.i(TAG, "Relative to center of kibo in its cords: " + targetPoint[0] + ", " + targetPoint[1] + ", "
                 + targetPoint[2]);
 
@@ -37,12 +35,14 @@ public class TargetManager {
     }
 
     private static double[] calculateNewOrientation(double[] rotaion, Quaternion originalOrientation) {
-        double[] conjugate = { rotaion[0], -rotaion[1], -rotaion[2], -rotaion[3] };
-        Log.i(TAG, "quaternion: " + rotaion[0] + ", " + rotaion[1] + ", " + rotaion[2] + ", " + rotaion[3]);
-
         Log.i(TAG, "original orientation: " + originalOrientation.toString());
         double[] originalOrientationInDouble = { originalOrientation.getW(), originalOrientation.getX(),
                 originalOrientation.getY(), originalOrientation.getZ() };
+
+        rotaion = LineRotation.convertToRealWorldRotation(rotaion, originalOrientationInDouble);
+        double[] conjugate = { rotaion[0], -rotaion[1], -rotaion[2], -rotaion[3] };
+        Log.i(TAG, "quaternion: " + rotaion[0] + ", " + rotaion[1] + ", " + rotaion[2] + ", " + rotaion[3]);
+        
         double[] orientation = multiplyQuaternions(rotaion,
                 multiplyQuaternions(originalOrientationInDouble, conjugate));
         double norm = Math.sqrt(orientation[0] * orientation[0] + orientation[1] * orientation[1]
