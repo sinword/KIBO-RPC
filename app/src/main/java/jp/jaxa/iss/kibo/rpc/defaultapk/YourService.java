@@ -4,6 +4,10 @@ import jp.jaxa.iss.kibo.rpc.api.KiboRpcService;
 import gov.nasa.arc.astrobee.types.*;
 import gov.nasa.arc.astrobee.Result;
 import gov.nasa.arc.astrobee.Kinematics;
+import jp.jaxa.iss.kibo.rpc.api.types.PointCloud;
+
+import android.graphics.Bitmap;
+import android.os.SystemClock;
 import android.util.Log;
 import PathCaculation.*;
 import Basic.*;
@@ -20,6 +24,15 @@ import org.opencv.core.MatOfPoint3f;
 import org.opencv.core.Point3;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.core.Size;
+import org.opencv.core.Rect;
+import static org.opencv.android.Utils.matToBitmap;
+
+import com.google.zxing.BinaryBitmap;
+import com.google.zxing.LuminanceSource;
+import com.google.zxing.RGBLuminanceSource;
+import com.google.zxing.common.HybridBinarizer;
+import com.google.zxing.qrcode.QRCodeReader;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 
+import static org.opencv.android.Utils.matToBitmap;
 import static org.opencv.core.Core.gemm;
 
 /**
@@ -77,8 +91,11 @@ public class YourService extends KiboRpcService {
 
         start();
 
-//        goToPoint1();
+        Log.i(TAG, "Move to QRcode point");
+        moveToQRCodePoint();
 
+        Log.i(TAG, "Handle QRcode");
+        String QRCodeResult = HandleQRCode();
         handleTarget(1);
 
         api.reportMissionCompletion("Mission Complete!");
