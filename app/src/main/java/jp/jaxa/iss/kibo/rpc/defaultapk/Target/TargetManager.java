@@ -16,7 +16,7 @@ import jp.jaxa.iss.kibo.rpc.defaultapk.Target.TargetConfig;
 public class TargetManager {
     private static final String TAG = "TargetManager";
 
-    private void inputPoints(Mat targetPoint, Point3 pos, Mat lineDirection, Mat linePoint) {
+    private static void inputPoints(Mat targetPoint, Point3 pos, Mat lineDirection, Mat linePoint) {
         targetPoint.put(0, 0, pos.z + TargetConfig.NAV_CAM_POSITION[0]);
         targetPoint.put(1, 0, pos.x + TargetConfig.NAV_CAM_POSITION[1]);
         targetPoint.put(2, 0, pos.y + TargetConfig.NAV_CAM_POSITION[2]);
