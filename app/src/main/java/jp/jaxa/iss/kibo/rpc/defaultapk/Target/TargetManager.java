@@ -11,9 +11,27 @@ import java.util.ArrayList;
 import java.util.List;
 
 import gov.nasa.arc.astrobee.types.Quaternion;
+import jp.jaxa.iss.kibo.rpc.defaultapk.Target.TargetConfig;
 
 public class TargetManager {
     private static final String TAG = "TargetManager";
+
+    private void inputPoints(Mat targetPoint, Point3 pos, Mat lineDirection, Mat linePoint) {
+        targetPoint.put(0, 0, pos.z + TargetConfig.NAV_CAM_POSITION[0]);
+        targetPoint.put(1, 0, pos.x + TargetConfig.NAV_CAM_POSITION[1]);
+        targetPoint.put(2, 0, pos.y + TargetConfig.NAV_CAM_POSITION[2]);
+
+        Log.i(TAG, "Relative to center of kibo in its cords: " + targetPoint.dump());
+        // (1, 0, 0) represents the direction of the laser which is shoot forward
+        lineDirection.put(0, 0, 1);
+        lineDirection.put(1, 0, 0);
+        lineDirection.put(2, 0, 0);
+
+        for (int i = 0; i < 3; ++i) {
+            linePoint.put(i, 0, TargetConfig.LASER_POSITION[i]);
+        }
+    }
+
     public static Quaternion calibrateLocation(Mat image, Quaternion originalOrientation) {
         Log.i(TAG, "In calibrateLocation");
         if (image.empty()) {
@@ -47,19 +65,9 @@ public class TargetManager {
         Log.i(TAG, "Relative to camera: " + pos.x + ", " + pos.y + ", " + pos.z);
 
         Mat targetPoint = new Mat(3, 1, CvType.CV_64FC1);
-        targetPoint.put(0, 0, pos.z + TargetConfig.NAV_CAM_POSITION[0]);
-        targetPoint.put(1, 0, pos.x + TargetConfig.NAV_CAM_POSITION[1]);
-        targetPoint.put(2, 0, pos.y + TargetConfig.NAV_CAM_POSITION[2]);
-        Log.i(TAG, "Relative to center of kibo in its cords: " + targetPoint.dump());
-        // (1, 0, 0) represents the direction of the laser which is shoot forward
         Mat lineDirection = new Mat(3, 1, CvType.CV_64FC1);
-        lineDirection.put(0, 0, 1);
-        lineDirection.put(1, 0, 0);
-        lineDirection.put(2, 0, 0);
         Mat linePoint = new Mat(3, 1, CvType.CV_64FC1);
-        for (int i = 0; i < 3; ++i) {
-            linePoint.put(i, 0, TargetConfig.LASER_POSITION[i]);
-        }
+        inputPoints(targetPoint, pos, lineDirection, linePoint);
 
         // LineRotatoin class will calculate the angle that kibo should turn
         LineRotation lineRotation = new LineRotation(linePoint, lineDirection, targetPoint);
