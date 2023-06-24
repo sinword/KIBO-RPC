@@ -46,6 +46,20 @@ public class MapConfig implements IMapConfig {
     public final Cuboid[] AllKOZs = new Cuboid[]{KOZ1, KOZ2, KOZ3, KOZ4, KOZ5};
     public final Cuboid[] AllKIZs = new Cuboid[]{KIZ1, KIZ2};
     @Override
+    public Map<Integer, Transform> getTransformMap() {
+        Map<Integer, Transform> map = new HashMap<Integer, Transform>();
+        map.put(0, GoalPoint);
+        map.put(1, Point1);
+        map.put(2, Point2);
+        map.put(3, Point3);
+        map.put(4, Point4);
+        map.put(5, Point5);
+        map.put(6, Point6);
+        map.put(7, Point7);
+        map.put(8, GoalPoint);
+        return map;
+    }
+    @Override
     public Cuboid[] getAllKOZs() {
         return AllKOZs;
     }

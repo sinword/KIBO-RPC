@@ -42,7 +42,7 @@ public class MapManager{
 
 
 
-    public boolean NotInKOZ(LineSegment line){
+    private boolean NotInKOZ(LineSegment line){
         Cuboid[] KOZs = config.getAllKOZs();
         for (int i = 0; i < KOZs.length; i++){
             if (KOZs[i].isCross(line)){
@@ -51,7 +51,7 @@ public class MapManager{
         }
         return true;
     }
-    public boolean NotInKOZ(Vector3D point){
+    private boolean NotInKOZ(Vector3D point){
         Cuboid[] KOZs = config.getAllKOZs();
         for (int i = 0; i < KOZs.length; i++){
             if (KOZs[i].isInside(point)){
@@ -59,6 +59,11 @@ public class MapManager{
             }
         }
         return true;
+    }
+
+    public void getAllDistanceFromCurrentPosition(Vector3D currentPosition){
+        Map<Integer, Transform> map = mapConfig.getTransformMap();
+        
     }
 
     public double getPathLength(Vector3D[] path){
