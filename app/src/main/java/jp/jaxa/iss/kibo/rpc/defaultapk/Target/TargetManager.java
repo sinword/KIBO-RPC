@@ -17,9 +17,12 @@ public class TargetManager {
     private static final String TAG = "TargetManager";
 
     private static void inputPoints(double[] targetPoint, Point3 pos, double[] lineDirection, double[] linePoint) {
-        targetPoint[0] = pos.z + TargetConfig.NAV_CAM_POSITION[0];
-        targetPoint[1] = pos.x + TargetConfig.NAV_CAM_POSITION[1];
-        targetPoint[2] = pos.y + TargetConfig.NAV_CAM_POSITION[2];
+        targetPoint[0] = pos.z;
+        targetPoint[1] = pos.x;
+        targetPoint[2] = pos.y;
+        // targetPoint[0] = pos.z + TargetConfig.NAV_CAM_POSITION[0];
+        // targetPoint[1] = pos.x + TargetConfig.NAV_CAM_POSITION[1];
+        // targetPoint[2] = pos.y + TargetConfig.NAV_CAM_POSITION[2];
         Log.i(TAG, "Relative to center of kibo in its cords: " + targetPoint[0] + ", " + targetPoint[1] + ", "
                 + targetPoint[2]);
 
@@ -89,7 +92,7 @@ public class TargetManager {
 
         // LineRotatoin class will calculate the angle that kibo should turn
         double[] orientation = calculateNewOrientation(
-                LineRotation.getQuaternion(linePoint, lineDirection, targetPoint), originalOrientation);
+                LineRotation.getQuaternion(targetPoint), originalOrientation);
         Quaternion orientationQuaternion = new Quaternion((float) orientation[1], (float) orientation[2],
                 (float) orientation[3], (float) orientation[0]);
         Log.i(TAG, "orientation: " + orientationQuaternion.toString());

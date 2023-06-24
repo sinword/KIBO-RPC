@@ -11,6 +11,7 @@ public class TargetConfig {
             -0.0422f, -0.0826f };
     public static final float[] LASER_POSITION = new float[] { 0.1302f, 0.0572f,
             -0.1111f };
+    public static final float[] LASER_DIRECTION = new float[] { 1, 0, 0 };
     public static final float MARKER_LENGTH = 0.05f;
     public static int[] count = new int[] { 0, 0, 0, 0, 0, 0, 0 };
     public static Mat navCamMatrix = new Mat(3, 3, CvType.CV_32FC1);
