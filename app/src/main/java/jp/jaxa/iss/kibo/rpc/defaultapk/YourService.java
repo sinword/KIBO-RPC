@@ -33,7 +33,6 @@ import static org.opencv.core.Core.gemm;
 public class YourService extends KiboRpcService {
     private MapConfig mapConfig = new MapConfig();
     private MapManager mapManager = new MapManager(mapConfig, 0.1f);
-    private Map<Integer, double> DistanceMap = new HashMap<Integer, double>(); // key: point id, value: distance from Astrobee Point
     private boolean QRCodeDown = false;
     private final String TAG = this.getClass().getSimpleName();
     private Config config;
@@ -94,10 +93,13 @@ public class YourService extends KiboRpcService {
         //moveToByShortestPath(mapConfig.Point1, mapConfig.Point2);
 
     }
-    private void handleActivatedTarget(){
-        List<Integer> activatedTargets = getActivatedTargets();
+    private void handleNextDestination(){
+        List<Integer> activatedTargets = api.getActivatedTargets();
+        if(!QRCodeDown){
+            activatedTargets.add(0);
+        }
         int target = getNextDestination(activatedTargets);
-        if(target == 0 && !QRCodeDown){
+        if(target == 0){
             moveToQRCodePoint();
             QRCodeDown = true;
         }
@@ -119,14 +121,11 @@ public class YourService extends KiboRpcService {
     }
 
     private Integer getNextDestination(List<Integer> activatedTargets){
-        updateDistanceMap();
+        Map<Integer, double> DistanceMap = getDistanceMap();
         int minDistance = 100000;
-        int target = 0;
-        if(!QRCodeDown){
-            activatedTargets.add(0);
-        }
+        int target = -1;
         for (int i = 0; i < activatedTargets.size(); i++) {
-            int distance = DistanceMap.get(activatedTargets.[i]);
+            int distance = DistanceMap.get(activatedTargets[i]);
             if (distance < minDistance){
                 minDistance = distance;
                 target = activatedTargets[i];
@@ -135,13 +134,15 @@ public class YourService extends KiboRpcService {
         return target;
     }
 
-
-    private void updateDistanceMap(){
+    private Map<Integer, double> getDistanceMap(){
+        Map<Integer, double> DistanceMap = new HashMap<Integer, double>();
         for (int i = 1; i <= 7; i++) {
             DistanceMap.put(i, getDistanceToPosition(getPointFromID(i)));
         }
         DistanceMap.put(0, getDistanceToPosition(mapConfig.QRCodePoint));
+        return DistanceMap;
     }
+
 
     private Transform getPointFromID(int id){
         return mapConfig.AllPoints[id - 1];
