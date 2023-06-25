@@ -40,16 +40,10 @@ public class TargetManager {
                 originalOrientation.getY(), originalOrientation.getZ() };
 
         rotaion = LineRotation.convertToRealWorldRotation(rotaion, originalOrientationInDouble);
-        double[] conjugate = { rotaion[0], -rotaion[1], -rotaion[2], -rotaion[3] };
         Log.i(TAG, "quaternion: " + rotaion[0] + ", " + rotaion[1] + ", " + rotaion[2] + ", " + rotaion[3]);
-        
-        double[] orientation = multiplyQuaternions(rotaion,
-                multiplyQuaternions(originalOrientationInDouble, conjugate));
-        double norm = Math.sqrt(orientation[0] * orientation[0] + orientation[1] * orientation[1]
-                + orientation[2] * orientation[2] + orientation[3] * orientation[3]);
-        for (int i = 0; i < 4; ++i) {
-            orientation[i] /= norm;
-        }
+
+        double[] orientation = multiplyQuaternions(originalOrientationInDouble, rotaion);
+        orientation = LineRotation.normalize(orientation);
 
         return orientation;
     }

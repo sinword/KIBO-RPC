@@ -18,9 +18,16 @@ import static org.opencv.core.Core.transpose;
 public class LineRotation {
         private static final String TAG = "LineRotation";
 
-        private static double[] normalize(double[] vector) {
-                double norm = Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1] + vector[2] * vector[2]);
-                double[] normalizedVector = { vector[0] / norm, vector[1] / norm, vector[2] / norm };
+        public static double[] normalize(double[] vector) {
+                double normSquare = 0;
+                for (int i = 0; i < vector.length; i++) {
+                        normSquare += vector[i] * vector[i];
+                }
+                double[] normalizedVector = new double[vector.length];
+                double norm = Math.sqrt(normSquare);
+                for (int i = 0; i < vector.length; i++) {
+                        normalizedVector[i] = vector[i] / norm;
+                }
                 return normalizedVector;
         }
 
@@ -87,39 +94,50 @@ public class LineRotation {
         }
 
         public static double[] convertToRealWorldRotation(double[] rotation, double[] currentOrientation) {
-                double halfRotaionAngle = Math.acos(rotation[0]);
-                double sinHalfRotationAngle = Math.sin(halfRotaionAngle);
-                double[] rotationAxis = { rotation[1] / sinHalfRotationAngle, rotation[2] / sinHalfRotationAngle,
-                                rotation[3] / sinHalfRotationAngle };
-                double[] rotationAxisInWorld = originalVector(rotationAxis, currentOrientation);
-                double[] rotationInWorld = { Math.cos(halfRotaionAngle), rotationAxisInWorld[0] * sinHalfRotationAngle,
+                // Extract the rotation angle and axis from the quaternion
+                double halfRotationAngle = Math.acos(rotation[0]);
+                double sinHalfRotationAngle = Math.sin(halfRotationAngle);
+                double[] rotationAxis = { rotation[1], rotation[2], rotation[3] };
+                rotationAxis = normalize(rotationAxis);
+
+                // Calculate the original rotation axis in the world coordinate system
+                double[] rotationAxisInWorld = calculateOriginalRotationAxis(rotationAxis, currentOrientation);
+
+                // Convert the rotation to the real-world representation
+                double[] rotationInWorld = { Math.cos(halfRotationAngle), rotationAxisInWorld[0] * sinHalfRotationAngle,
                                 rotationAxisInWorld[1] * sinHalfRotationAngle,
                                 rotationAxisInWorld[2] * sinHalfRotationAngle };
-                double norm = Math.sqrt(rotationInWorld[0] * rotationInWorld[0]
-                                + rotationInWorld[1] * rotationInWorld[1] + rotationInWorld[2] * rotationInWorld[2]
-                                + rotationInWorld[3] * rotationInWorld[3]);
-                rotationInWorld[0] /= norm;
-                rotationInWorld[1] /= norm;
-                rotationInWorld[2] /= norm;
-                rotationInWorld[3] /= norm;
+                rotationInWorld = normalize(rotationInWorld);
                 return rotationInWorld;
         }
 
-        private static double[] originalVector(double[] convertedVector, double[] quaternion) {
-                Mat inputVector = createVector(convertedVector);
-                Mat rotationQuaternion = createQuaternion(quaternion);
-                Mat inverseRotationMatrix = computeInverseRotationMatrix(rotationQuaternion);
-                Mat outputVector = rotateVector(inputVector, inverseRotationMatrix);
-
-                double[] result = new double[outputVector.rows()];
-                outputVector.get(0, 0, result);
-                result = normalize(result);
-                return result;
+        private static double[] calculateOriginalRotationAxis(double[] inputRotationAxis, double[] robotOrientation) {
+                Mat inputRotationAxisVector = createVector(inputRotationAxis);
+                Mat robotOrientationQuaternion = createQuaternion(robotOrientation);
+                Mat inverseRotationMatrix = computeInverseRotationMatrix(robotOrientationQuaternion);
+                Mat outputRotationAxisVector = rotateVector(inputRotationAxisVector, inverseRotationMatrix);
+                double[] outputVector = convertVectorToArray(outputRotationAxisVector);
+                return normalize(outputVector);
         }
 
-        private static Mat computeInverseRotationMatrix(Mat rotationQuaternion) {
+        // Create a 3D vector (column matrix) from an array of values
+        private static Mat createVector(double[] values) {
+                Mat vector = new Mat(values.length, 1, CvType.CV_64FC1);
+                vector.put(0, 0, values);
+                return vector;
+        }
+
+        // Create a quaternion (column matrix) from an array of values
+        private static Mat createQuaternion(double[] values) {
+                Mat quaternion = new Mat(values.length, 1, CvType.CV_64FC1);
+                quaternion.put(0, 0, values);
+                return quaternion;
+        }
+
+        // Compute the inverse rotation matrix from a quaternion
+        private static Mat computeInverseRotationMatrix(Mat quaternion) {
                 Mat rotationMatrix = new Mat();
-                Calib3d.Rodrigues(convertQuaternionToRotationVector(rotationQuaternion), rotationMatrix);
+                Calib3d.Rodrigues(convertQuaternionToRotationVector(quaternion), rotationMatrix);
 
                 Mat inverseRotationMatrix = new Mat();
                 transpose(rotationMatrix, inverseRotationMatrix);
@@ -127,28 +145,15 @@ public class LineRotation {
                 return inverseRotationMatrix;
         }
 
-        private static Mat createVector(double[] values) {
-                Mat vector = new Mat(values.length, 1, CvType.CV_64FC1);
-                vector.put(0, 0, values);
-                return vector;
-        }
-
-        private static Mat createQuaternion(double[] values) {
-                Mat quaternion = new Mat(values.length, 1, CvType.CV_64FC1);
-                quaternion.put(0, 0, values);
-                return quaternion;
-        }
-
-        private static Mat rotateVector(Mat inputVector, Mat rotationQuaternion) {
-                Mat rotationMatrix = new Mat();
-                Calib3d.Rodrigues(convertQuaternionToRotationVector(rotationQuaternion), rotationMatrix);
-
+        // Rotate a 3D vector using a rotation matrix
+        private static Mat rotateVector(Mat inputVector, Mat rotationMatrix) {
                 Mat outputVector = new Mat();
                 gemm(rotationMatrix, inputVector, 1.0, new Mat(), 0.0, outputVector);
 
                 return outputVector;
         }
 
+        // Convert a quaternion to a rotation vector
         private static Mat convertQuaternionToRotationVector(Mat quaternion) {
                 double w = quaternion.get(0, 0)[0];
                 double x = quaternion.get(1, 0)[0];
@@ -162,8 +167,18 @@ public class LineRotation {
                 double yRot = y / sinAngle * angle;
                 double zRot = z / sinAngle * angle;
 
-                Mat result = new Mat(3, 1, CvType.CV_64FC1);
-                result.put(0, 0, xRot, yRot, zRot);
-                return result;
+                Mat rotationVector = new Mat(3, 1, CvType.CV_64FC1);
+                rotationVector.put(0, 0, xRot, yRot, zRot);
+
+                return rotationVector;
+        }
+
+        // Convert a 3D vector to an array of values
+        private static double[] convertVectorToArray(Mat vector) {
+                double[] values = new double[vector.rows()];
+                for (int i = 0; i < vector.rows(); i++) {
+                        values[i] = vector.get(i, 0)[0];
+                }
+                return values;
         }
 }
