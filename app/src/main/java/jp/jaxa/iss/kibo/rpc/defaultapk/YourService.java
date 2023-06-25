@@ -81,6 +81,9 @@ public class YourService extends KiboRpcService {
     }
 
     private void MainRun() {
+        moveToFromCurrentPosition(mapConfig.QRCodePoint);
+        QRCodeDone = true;
+        QRCodeResult = HandleQRCode();
         while (true) {
             if( api.getTimeRemaining().get(1) < 60000){
                 moveToFromCurrentPosition(mapConfig.GoalPoint);
