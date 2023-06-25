@@ -54,7 +54,7 @@ public class YourService extends KiboRpcService {
     private boolean QRCodeDown = false;
     private final String TAG = this.getClass().getSimpleName();
     private Config config;
-    private Map<String, String> QRCodeResultMap = new HashMap<String, String>();
+    // private Map<String, String> QRCodeResultMap = new HashMap<String, String>();
     private String QRCodeResult = "";
 
     // relative to robot body
@@ -84,12 +84,6 @@ public class YourService extends KiboRpcService {
 
     @Override
     protected void runPlan1() {
-        QRCodeResultMap.put("JEM", "STAY_AT_JEM");
-        QRCodeResultMap.put("COLUMBUS", "GO_TO_COLUMBUS");
-        QRCodeResultMap.put("RACK1", "CHECK_RACK_1");
-        QRCodeResultMap.put("ASTROBEE", "I_AM_HERE");
-        QRCodeResultMap.put("INTBALL", "LOOKING_FORWARD_TO_SEE_YOU");
-        QRCodeResultMap.put("BLANK", "NO_PROBLEM");
 
         Log.i(TAG, "Running plan 1");
 
@@ -141,7 +135,8 @@ public class YourService extends KiboRpcService {
         if (!QRCOdeDown){
             Log.i(TAG, "No QRCode detected");
         }
-        api.reportMissionCompletion(QRCodeResultMap.get(QRCodeResult));
+        QRCodeResult = HandleQRCode();
+        api.reportMissionCompletion(QRCodeResult);
     }
 
     private Integer moveToShortestAvailablePoint(){
@@ -217,25 +212,6 @@ public class YourService extends KiboRpcService {
         }
         while (!result.hasSucceeded() && count < max_count);
     }
-
-//    private void goToPoint1() {
-//        // avoid KOZ
-//        MapManager manager = new MapManager(new MapConfig(), 1);
-//        var source = config.StartPoint;
-//        var destination = config.Point1;
-//        var path = manager.getShortestPath(source, destination);
-//        Quateration quaternion = new Quateration(0f, 0f, 0f, 1f);
-//        for (Point point: path) {
-//            api.moveTo(point, quaternion, true);
-//        }
-////        Point point = new Point(10.3f, -10.2f, 4.32f);
-////        Quaternion quaternion = new Quaternion(0f, 0f, 0f, 1f);
-//
-//        // point 1
-//        point = new Point(11.2746d, -9.92284d, 5.2988d);
-//        quaternion = new Quaternion(0.0f, 0.0f, -0.707f, 0.707f);
-//        api.moveTo(point, quaternion, true);
-//    }
 
     private void start() {
         Log.i(TAG, "start mission");
@@ -314,8 +290,6 @@ public class YourService extends KiboRpcService {
         while(contents == null && count < count_max) {
             Log.i(TAG, "QRcode event start!");
             long start_time = SystemClock.elapsedRealtime();
-
-
             // turn on the front flash light
             flash_control(true);
             // scan QRcode
@@ -324,10 +298,8 @@ public class YourService extends KiboRpcService {
 
             int[] intArray = new int[bMap.getWidth() * bMap.getHeight()];
             bMap.getPixels(intArray, 0, bMap.getWidth(), 0, 0, bMap.getWidth(), bMap.getHeight());
-
             LuminanceSource source = new RGBLuminanceSource(bMap.getWidth(), bMap.getHeight(), intArray);
             BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
-
 
             try{
                 com.google.zxing.Result result = new QRCodeReader().decode(bitmap);
@@ -357,12 +329,11 @@ public class YourService extends KiboRpcService {
                         report_message = null;
                         break;
                 }
-
             }
             catch (Exception e) {
                 Log.i(TAG, "QR code is not detected");
             }
-            //////////////////////////////////////////////////////////////////////////////////////////////////////
+
             Log.i(TAG, "QRcode event stop");
             long stop_time = SystemClock.elapsedRealtime();
 
@@ -372,7 +343,6 @@ public class YourService extends KiboRpcService {
         flash_control(false);
 
         // report mission completion and blink the lights
-        api.reportMissionCompletion(report_message);
         return report_message;
     }
 
