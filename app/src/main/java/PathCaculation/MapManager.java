@@ -61,9 +61,15 @@ public class MapManager{
         return true;
     }
 
-    public void getAllDistanceFromCurrentPosition(Vector3D currentPosition){
+    public Map<Integer, Double> getAllDistanceFromCurrentPosition(Vector3D currentPosition){
         Map<Integer, Transform> map = mapConfig.getTransformMap();
-        
+        Map<Integer, Double> result = new HashMap<Integer, Double>();
+        for (Map.Entry<Integer, Transform> entry : map.entrySet()){
+            Vector3D[] path = getShortestPath(currentPosition, entry.getValue().getVector3DPosition());
+            Double distance = getPathLength(path);
+            result.put(entry.getKey(), distance);
+        }
+        return result;
     }
 
     public double getPathLength(Vector3D[] path){
