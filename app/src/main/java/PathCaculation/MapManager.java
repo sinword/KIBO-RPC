@@ -21,6 +21,9 @@ public class MapManager{
         for (int i = 0; i < KOZs.length; i++) {
             Vector3D[] KOZ_points = KOZs[i].getPointsOutsideCuboid(distance_from_KOZ);
             for (int j = 0; j < KOZ_points.length; j++) {
+                if(!InKIZ(KOZ_points[j])){
+                    continue;
+                }
                 Node n = new Node("KOZ" + i + "_point" + j, KOZ_points[j]);
                 BasicGraph.addNode(n);
             }
@@ -62,6 +65,16 @@ public class MapManager{
         }
         return true;
     }
+    private boolean InKIZ(Vector3D point){
+        Cuboid[] KIZs = config.getAllKIZs();
+        for (int i = 0; i < KIZs.length; i++){
+            if (KIZs[i].isInside(point)){
+                return true;
+            }
+        }
+        return false;
+    }
+
     public Integer getShortestAvailablePointID(Vector3D currentPosition, List<Integer> availablePoints){
         Map<Integer, Double> distanceMap = getAllDistanceFromCurrentPosition(currentPosition);
         double min = Double.MAX_VALUE;
