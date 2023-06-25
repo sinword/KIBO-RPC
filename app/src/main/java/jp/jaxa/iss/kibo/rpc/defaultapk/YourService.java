@@ -18,6 +18,8 @@ import Basic.*;
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
 import org.opencv.core.Rect;
+import org.opencv.imgproc.Imgproc;
+
 import static org.opencv.android.Utils.matToBitmap;
 
 import com.google.zxing.BinaryBitmap;
@@ -216,85 +218,6 @@ public class YourService extends KiboRpcService {
         return closestValue;
     }
 
-    private String HandleQRCode() {
-        String contents = null;
-        int count = 0;
-        int count_max = 5;
-        String report_message = "";
-
-        while(contents == null && count < count_max) {
-            Log.i(TAG, "QRcode event start!");
-            long start_time = SystemClock.elapsedRealtime();
-            // turn on the front flash light
-            flash_control(true);
-            // scan QRcode
-            Mat qr_mat = api.getMatNavCam();
-            Bitmap bMap = resizeImage(qr_mat, 2000, 1500);	
-
-            int[] intArray = new int[bMap.getWidth() * bMap.getHeight()];
-            bMap.getPixels(intArray, 0, bMap.getWidth(), 0, 0, bMap.getWidth(), bMap.getHeight());
-            LuminanceSource source = new RGBLuminanceSource(bMap.getWidth(), bMap.getHeight(), intArray);
-            BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
-
-            try{
-                com.google.zxing.Result result = new QRCodeReader().decode(bitmap);
-                contents = result.getText();	// 得到掃到的資料
-                Log.i(TAG, "QR code is detected, content is " + contents);
-
-                switch (contents) {
-                    case "JEM":
-                        report_message = "STAY_AT_JEM";
-                        break;
-                    case "COLUMBUS":
-                        report_message = "GO_TO_COLUMBUS";
-                        break;
-                    case "RACK1":
-                        report_message = "CHECK_RACK_1";
-                        break;
-                    case "ASTROBEE":
-                        report_message = "I_AM_HERE";
-                        break;
-                    case "INTBALL":
-                        report_message = "LOOKING_FORWARD_TO_SEE_YOU";
-                        break;
-                    case "BLANK":
-                        report_message = "NO_PROBLEM";
-                        break;
-                    default:
-                        report_message = null;
-                        break;
-                }
-            }
-            catch (Exception e) {
-                Log.i(TAG, "QR code is not detected");
-            }
-
-            Log.i(TAG, "QRcode event stop");
-            long stop_time = SystemClock.elapsedRealtime();
-
-            Log.i(TAG, "QRcode event spent time: "+ (stop_time-start_time)/1000);
-            count++;
-        }
-        flash_control(false);
-
-        // report mission completion and blink the lights
-        return report_message;
-    }
-
-    private void flash_control(boolean status) { // 新增 thread 一秒等待 flash打開
-        if(status) {
-            api.flashlightControlFront(0.05f); //1st code是給 0.025f
-            api.flashlightControlBack(0.025f);	// 1st code 沒給
-            try {
-                Thread.sleep(1000); // wait a few seconds
-            }
-            catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        else api.flashlightControlFront(0.00f);
-    }
-
     private Bitmap resizeImage(Mat src, int width, int height) {
         Size size = new Size(width, height);
         Imgproc.resize(src, src, size);
@@ -381,14 +304,5 @@ public class YourService extends KiboRpcService {
             }
         }
         else api.flashlightControlFront(0.00f);
-    }
-
-    private Bitmap resizeImage(Mat src, int width, int height) {
-        Size size = new Size(width, height);
-        Imgproc.resize(src, src, size);
-
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        matToBitmap(src, bitmap, false);
-        return bitmap;
     }
 }
