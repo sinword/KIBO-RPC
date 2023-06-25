@@ -81,6 +81,7 @@ public class YourService extends KiboRpcService {
     }
 
     private void MainRun() {
+        moveToFromCurrentPosition(mapConfig.StablePoint)
         moveToFromCurrentPosition(mapConfig.QRCodePoint);
         QRCodeDone = true;
         QRCodeResult = HandleQRCode();
