@@ -17,30 +17,21 @@ import jp.jaxa.iss.kibo.rpc.defaultapk.Target.TargetConfig;
 public class TargetManager {
     private static final String TAG = "TargetManager";
 
-    private static void inputPoints(double[] targetPoint, Point3 pos, double[] lineDirection, double[] linePoint) {
+    private static void inputPoints(double[] targetPoint, Point3 pos) {
         targetPoint[0] = pos.z + TargetConfig.NAV_CAM_POSITION[0];
         targetPoint[1] = pos.x + TargetConfig.NAV_CAM_POSITION[1];
         targetPoint[2] = pos.y + TargetConfig.NAV_CAM_POSITION[2];
         Log.i(TAG, "Relative to center of kibo in its cords: " + targetPoint[0] + ", " + targetPoint[1] + ", "
                 + targetPoint[2]);
-
-        // (1, 0, 0) represents the direction of the laser which is shoot forward
-        lineDirection[0] = 1;
-        lineDirection[1] = 0;
-        lineDirection[2] = 0;
-
-        linePoint[0] = TargetConfig.LASER_POSITION[0];
-        linePoint[1] = TargetConfig.LASER_POSITION[1];
-        linePoint[2] = TargetConfig.LASER_POSITION[2];
     }
 
     private static double[] calculateNewOrientation(double[] rotaion, Quaternion originalOrientation) {
         Log.i(TAG, "original orientation: " + originalOrientation.toString());
         double[] originalOrientationInDouble = { originalOrientation.getW(), originalOrientation.getX(),
                 originalOrientation.getY(), originalOrientation.getZ() };
-
+        Log.i(TAG, "original rotation: " + rotaion[0] + ", " + rotaion[1] + ", " + rotaion[2] + ", " + rotaion[3]);
         rotaion = LineRotation.convertToRealWorldRotation(rotaion, originalOrientationInDouble);
-        Log.i(TAG, "quaternion: " + rotaion[0] + ", " + rotaion[1] + ", " + rotaion[2] + ", " + rotaion[3]);
+        Log.i(TAG, "quaternion in real world: " + rotaion[0] + ", " + rotaion[1] + ", " + rotaion[2] + ", " + rotaion[3]);
 
         double[] orientation = multiplyQuaternions(originalOrientationInDouble, rotaion);
         orientation = LineRotation.normalize(orientation);
@@ -80,9 +71,7 @@ public class TargetManager {
         Log.i(TAG, "Relative to camera: " + pos.x + ", " + pos.y + ", " + pos.z);
 
         double[] targetPoint = new double[3];
-        double[] lineDirection = new double[3];
-        double[] linePoint = new double[3];
-        inputPoints(targetPoint, pos, lineDirection, linePoint);
+        inputPoints(targetPoint, pos);
 
         // LineRotatoin class will calculate the angle that kibo should turn
         double[] orientation = calculateNewOrientation(
