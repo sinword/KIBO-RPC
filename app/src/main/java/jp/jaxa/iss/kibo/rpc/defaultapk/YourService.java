@@ -3,27 +3,19 @@ package jp.jaxa.iss.kibo.rpc.defaultapk;
 import jp.jaxa.iss.kibo.rpc.api.KiboRpcService;
 import gov.nasa.arc.astrobee.types.*;
 import gov.nasa.arc.astrobee.Result;
+import jp.jaxa.iss.kibo.rpc.defaultapk.Target.TargetManager;
+import jp.jaxa.iss.kibo.rpc.defaultapk.Target.TargetConfig;
+import gov.nasa.arc.astrobee.types.Quaternion;
 import gov.nasa.arc.astrobee.Kinematics;
 import jp.jaxa.iss.kibo.rpc.api.types.PointCloud;
 
 import android.graphics.Bitmap;
 import android.os.SystemClock;
 import android.util.Log;
-import PathCaculation.*;
+import gov.nasa.arc.astrobee.Kinematics;
 import Basic.*;
 
-import org.opencv.aruco.Aruco;
-import org.opencv.aruco.Dictionary;
-import org.opencv.calib3d.Calib3d;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfDouble;
-import org.opencv.core.MatOfPoint2f;
-import org.opencv.core.MatOfPoint3;
-import org.opencv.core.MatOfPoint3f;
-import org.opencv.core.Point3;
-import org.opencv.core.Scalar;
-import org.opencv.imgproc.Imgproc;
 import org.opencv.core.Size;
 import org.opencv.core.Rect;
 import static org.opencv.android.Utils.matToBitmap;
@@ -41,7 +33,8 @@ import java.util.Map;
 
 
 import static org.opencv.android.Utils.matToBitmap;
-import static org.opencv.core.Core.gemm;
+import PathCaculation.MapConfig;
+import PathCaculation.MapManager;
 
 /**
  * Class meant to handle commands from the Ground Data System and execute them
@@ -53,33 +46,12 @@ public class YourService extends KiboRpcService {
     private MapManager mapManager = new MapManager(mapConfig, 0.12f);
     private boolean QRCodeDone = false;
     private final String TAG = this.getClass().getSimpleName();
-    private Config config;
+    private TargetConfig targetConfig;
     // private Map<String, String> QRCodeResultMap = new HashMap<String, String>();
     private String QRCodeResult = "";
 
-    // relative to robot body
-
-    private class Config {
-        private final float[] NAV_CAM_POSITION = new float[] { 0.1177f,
-                -0.0422f, -0.0826f };
-        private final float[] LASER_POSITION = new float[] { 0.1302f, 0.0572f,
-                -0.1111f };
-        private final float MARKER_LENGTH = 0.05f;
-        private int[] count = new int[] { 0, 0, 0, 0, 0, 0, 0 };
-        private final int LOOP_LIMIT = 5;
-        private MatOfPoint3 objPoints = new MatOfPoint3(
-                new Point3(-MARKER_LENGTH / 2.0f, MARKER_LENGTH / 2.0f, 0f),
-                new Point3(MARKER_LENGTH / 2.0f, MARKER_LENGTH / 2.0f, 0f),
-                new Point3(MARKER_LENGTH / 2.0f, -MARKER_LENGTH / 2.0f, 0f),
-                new Point3(-MARKER_LENGTH / 2.0f, -MARKER_LENGTH / 2.0f, 0f));
-        private Mat navCamMatrix = new Mat(3, 3, CvType.CV_32FC1);
-        private MatOfDouble distCoeffs = new MatOfDouble();
-        private Dictionary arucoDict = Aruco.getPredefinedDictionary(Aruco.DICT_5X5_250);
-
-        private void init() {
-            navCamMatrix.put(0, 0, api.getNavCamIntrinsics()[0]);
-            distCoeffs.put(0, 0, api.getNavCamIntrinsics()[1]);
-        }
+    private Point convertFromVector3D(Vector3D vector) {
+        return new Point(vector.getX(), vector.getY(), vector.getZ());
     }
 
     @Override
@@ -87,8 +59,7 @@ public class YourService extends KiboRpcService {
 
         Log.i(TAG, "Running plan 1");
 
-        config = new Config();
-        config.init();
+        targetConfig = new TargetConfig(api.getNavCamIntrinsics());
 
         Log.i(TAG, "finish init");
 
@@ -107,8 +78,6 @@ public class YourService extends KiboRpcService {
     protected void runPlan3() {
         Log.i(TAG, "Running plan 3");
         runPlan1();
-        //moveToByShortestPath(mapConfig.Point1, mapConfig.Point2);
-
     }
 
     private void MainRun(){
@@ -151,13 +120,7 @@ public class YourService extends KiboRpcService {
         return shortestPoint;
     }
 
-    private void moveToQRCodePoint(){
-        moveToFromCurrentPosition(mapConfig.QRCodePoint);
-    }
-    private void moveToGoalPoint(){
-        moveToFromCurrentPosition(mapConfig.GoalPoint);
-    }
-    private void moveToPointNumber(int pointNumber){
+    private void moveToPointNumber(int pointNumber) {
         Transform des = getPointFromID(pointNumber);
         moveToFromCurrentPosition(des);
     }
@@ -184,34 +147,22 @@ public class YourService extends KiboRpcService {
         Point point = kinematics.getPosition();
         moveToByShortestPath(point, to);
     }
-    private void moveToByShortestPath(Transform transform, Transform to){
-        moveToByShortestPath(transform.position, to);
-    }
-    private void moveToByShortestPath(Point point, Transform to){
+
+    private void moveToByShortestPath(Point point, Transform to) {
         Vector3D[] result = mapManager.getShortestPath(new Vector3D(point), to.getVector3DPosition());
         for (int i = 1; i < result.length; i++) {
             directMoveTo(result[i].toPoint(), to.orientation);
         }
     }
-    private void directMoveTo(Transform transform) {
-        Point point = transform.position;
-        Quaternion quaternion = transform.orientation;
-        directMoveTo(point, quaternion);
-    }
-    private void directMoveTo(Point point) {
-        Quaternion quaternion = new Quaternion();
-        directMoveTo(point, quaternion);
-    }
-    private void directMoveTo(Point point, Quaternion quaternion)
-    {
+
+    private void directMoveTo(Point point, Quaternion quaternion) {
+        Log.i(TAG, "move to " + point.toString());
         Result result;
         int count = 0, max_count = 3;
-        do
-        {
+        do {
             result = api.moveTo(point, quaternion, true);
             count++;
-        }
-        while (!result.hasSucceeded() && count < max_count);
+        } while (!result.hasSucceeded() && count < max_count);
     }
 
     private void start() {
@@ -220,66 +171,137 @@ public class YourService extends KiboRpcService {
         api.startMission();
     }
 
-    private void calibrateLocation(int targetNumber) {
-        Log.i(TAG, "In calibrateLocation");
-        Mat image = api.getMatNavCam();
-        List<Mat> corners = new ArrayList<>();
-        Mat ids = new Mat();
-        Aruco.detectMarkers(image, config.arucoDict, corners, ids);
-        Aruco.drawDetectedMarkers(image, corners, ids);
-
-        if (ids.size().empty()) {
-            return;
-        }
-
-        Mat rvecs = new Mat();
-        Mat tvecs = new Mat();
-        Log.i(TAG, "Estimating markers pose");
-        Aruco.estimatePoseSingleMarkers(corners, config.MARKER_LENGTH, config.navCamMatrix,
-                config.distCoeffs, rvecs, tvecs);
-
-        // Iterate over each marker and calculate its center point
-        for (int i = 0; i < ids.size().height; ++i) {
-            Mat rvec = rvecs.row(i);
-            Mat tvec = tvecs.row(i);
-
-            // Draw marker axes on the image
-            Calib3d.drawFrameAxes(image, config.navCamMatrix, config.distCoeffs, rvec, tvec,
-                    config.MARKER_LENGTH / 2.0f);
-
-            // Convert rotation vector to rotation matrix
-            Mat rotMat = new Mat();
-            Calib3d.Rodrigues(rvec, rotMat);
-
-            Log.d(TAG, "rotMat.inv(): " + rotMat.inv().dump());
-            Log.d(TAG, "tvec.t(): " + tvec.t().dump());
-            Log.d(TAG, "type of rotMat.inv(): " + rotMat.inv().type());
-            Log.d(TAG, "type of tvec.t(): " + tvec.t().type());
-            Log.d(TAG, "size of rotMat.inv(): " + rotMat.inv().size());
-            Log.d(TAG, "size of tvec.t(): " + tvec.t().size());
-
-            // Calculate marker center point
-            // Mat markerPoint = new Mat();
-            // gemm(rotMat.inv(), tvec.t(), 1, new Mat(), 0, markerPoint);
-
-            // markerPoint = markerPoint.t();
-
-            // // Log center point of marker
-            // Log.i(TAG, "Marker " + ids.get(i, 0)[0] + " center point: "
-            // + markerPoint.dump());
-        }
-
-        api.saveMatImage(image, "target_" + targetNumber + "_" + config.count[targetNumber]
-                + ".png");
-        config.count[targetNumber]++;
-    }
-
     private void handleTarget(int targetNumber) {
-        calibrateLocation(targetNumber);
+        int loopCount = 0;
+        Quaternion original = api.getRobotKinematics().getOrientation();
+        float[] closestValues = { snapToValues(original.getX()), snapToValues(original.getY()),
+                snapToValues(original.getZ()), snapToValues(original.getW()) };
+        Quaternion newOrientation = new Quaternion(closestValues[0], closestValues[1], closestValues[2],
+                closestValues[3]);
+        double movement = Integer.MAX_VALUE;
+        while (movement > 0.03 && loopCount < 3) {
+            Mat image = api.getMatNavCam();
+            double[] vector = TargetManager.calibrateLocation(image, newOrientation);
+            double smallest = Math.abs(vector[0]);
+            int id = 0;
+            for (int i = 1; i < vector.length; i++) {
+                if (Math.abs(vector[i]) < smallest) {
+                    smallest = Math.abs(vector[i]);
+                    id = i;
+                }
+            }
+            vector[id] = 0;
+            api.relativeMoveTo(new Point(vector[0], vector[1], vector[2]), newOrientation, true);
+            movement = Math.sqrt(Math.pow(vector[0], 2) + Math.pow(vector[1], 2) + Math.pow(vector[2], 2));
+            loopCount++;
+        }
+
         api.laserControl(true);
         api.takeTargetSnapshot(targetNumber);
-        Mat image = api.getMatNavCam();
-        api.saveMatImage(image, "target_" + targetNumber + "_laser.png");
+    }
+
+    public static float snapToValues(float input) {
+        float[] values = { -1, -0.707f, -0.5f, 0, 0.5f, 0.707f, 1 };
+        float closestValue = values[0];
+        float smallestDifference = Math.abs(input - closestValue);
+
+        for (int i = 1; i < values.length; i++) {
+            float difference = Math.abs(input - values[i]);
+            if (difference < smallestDifference) {
+                closestValue = values[i];
+                smallestDifference = difference;
+            }
+        }
+
+        return closestValue;
+    }
+
+    private String HandleQRCode() {
+        String contents = null;
+        int count = 0;
+        int count_max = 5;
+        String report_message = "";
+
+        while(contents == null && count < count_max) {
+            Log.i(TAG, "QRcode event start!");
+            long start_time = SystemClock.elapsedRealtime();
+            // turn on the front flash light
+            flash_control(true);
+            // scan QRcode
+            Mat qr_mat = api.getMatNavCam();
+            Bitmap bMap = resizeImage(qr_mat, 2000, 1500);	
+
+            int[] intArray = new int[bMap.getWidth() * bMap.getHeight()];
+            bMap.getPixels(intArray, 0, bMap.getWidth(), 0, 0, bMap.getWidth(), bMap.getHeight());
+            LuminanceSource source = new RGBLuminanceSource(bMap.getWidth(), bMap.getHeight(), intArray);
+            BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
+
+            try{
+                com.google.zxing.Result result = new QRCodeReader().decode(bitmap);
+                contents = result.getText();	// 得到掃到的資料
+                Log.i(TAG, "QR code is detected, content is " + contents);
+
+                switch (contents) {
+                    case "JEM":
+                        report_message = "STAY_AT_JEM";
+                        break;
+                    case "COLUMBUS":
+                        report_message = "GO_TO_COLUMBUS";
+                        break;
+                    case "RACK1":
+                        report_message = "CHECK_RACK_1";
+                        break;
+                    case "ASTROBEE":
+                        report_message = "I_AM_HERE";
+                        break;
+                    case "INTBALL":
+                        report_message = "LOOKING_FORWARD_TO_SEE_YOU";
+                        break;
+                    case "BLANK":
+                        report_message = "NO_PROBLEM";
+                        break;
+                    default:
+                        report_message = null;
+                        break;
+                }
+            }
+            catch (Exception e) {
+                Log.i(TAG, "QR code is not detected");
+            }
+
+            Log.i(TAG, "QRcode event stop");
+            long stop_time = SystemClock.elapsedRealtime();
+
+            Log.i(TAG, "QRcode event spent time: "+ (stop_time-start_time)/1000);
+            count++;
+        }
+        flash_control(false);
+
+        // report mission completion and blink the lights
+        return report_message;
+    }
+
+    private void flash_control(boolean status) { // 新增 thread 一秒等待 flash打開
+        if(status) {
+            api.flashlightControlFront(0.05f); //1st code是給 0.025f
+            api.flashlightControlBack(0.025f);	// 1st code 沒給
+            try {
+                Thread.sleep(1000); // wait a few seconds
+            }
+            catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        else api.flashlightControlFront(0.00f);
+    }
+
+    private Bitmap resizeImage(Mat src, int width, int height) {
+        Size size = new Size(width, height);
+        Imgproc.resize(src, src, size);
+
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        matToBitmap(src, bitmap, false);
+        return bitmap;
     }
 
     private String HandleQRCode() {

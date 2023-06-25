@@ -8,4 +8,3 @@ public interface IMapConfig {
     Map<Integer, Transform> getTransformMap();
     Cuboid[] getAllKOZs();
 }
-

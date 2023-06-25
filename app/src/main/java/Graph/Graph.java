@@ -2,55 +2,57 @@ package Graph;
 
 import java.util.*;
 
-public class Graph{
+public class Graph {
     public Set<Node> nodes;
     public Set<Edge> edges;
     public final boolean IsBidirectional;
 
-    public Graph(boolean isBidirectional){
+    public Graph(boolean isBidirectional) {
         this(new HashSet<Node>(), new HashSet<Edge>(), isBidirectional);
     }
 
-    public Graph(Set<Node> nodes, Set<Edge> edges, boolean isBidirectional){
+    public Graph(Set<Node> nodes, Set<Edge> edges, boolean isBidirectional) {
         this.nodes = nodes;
         this.edges = edges;
         IsBidirectional = isBidirectional;
     }
 
-    public Graph copy(){
+    public Graph copy() {
         Set<Node> newNodes = new HashSet<>();
         Set<Edge> newEdges = new HashSet<>();
-        for(Node node : nodes){
-            newNodes.add(new Node(node.name ,node.data));
+        for (Node node : nodes) {
+            newNodes.add(new Node(node.name, node.data));
         }
-        for(Edge edge : edges){
+        for (Edge edge : edges) {
             newEdges.add(new Edge(edge.from, edge.to, edge.weight));
         }
         return new Graph(newNodes, newEdges, IsBidirectional);
     }
 
-    public void addNode(Node node){
+    public void addNode(Node node) {
         nodes.add(node);
     }
-    public void addEdge(Edge edge){
+
+    public void addEdge(Edge edge) {
         edges.add(edge);
-        
-        if(IsBidirectional)
+
+        if (IsBidirectional)
             edges.add(edge.getReverseEdge());
     }
 
-    public List<Node> getNeighbors(Node node){
+    public List<Node> getNeighbors(Node node) {
         List<Node> neighbors = new ArrayList<Node>();
-        for(Edge edge : edges){
-            if(edge.from == node){
+        for (Edge edge : edges) {
+            if (edge.from == node) {
                 neighbors.add(edge.to);
             }
         }
         return neighbors;
     }
-    public double getWeight(Node from, Node to){
-        for(Edge edge : edges){
-            if(edge.from == from && edge.to == to){
+
+    public double getWeight(Node from, Node to) {
+        for (Edge edge : edges) {
+            if (edge.from == from && edge.to == to) {
                 return edge.weight;
             }
         }
@@ -63,6 +65,7 @@ public class Graph{
         }
         return dijkstra(start, end);
     }
+
     private Node[] dijkstra(Node start, Node end) {
         Map<Node, Double> distances = new HashMap<>();
         Map<Node, Node> previous = new HashMap<>();
@@ -110,13 +113,15 @@ public class Graph{
 
         return path.toArray(new Node[path.size()]);
     }
-    public void dump_edges(){
-        for(Edge edge : edges){
+
+    public void dump_edges() {
+        for (Edge edge : edges) {
             System.out.println(edge.from.name + " -> " + edge.to.name + " : " + edge.weight);
         }
     }
-    public void dump_nodes(){
-        for(Node node : nodes){
+
+    public void dump_nodes() {
+        for (Node node : nodes) {
             System.out.println(node.name + " : " + node.data.toString());
         }
     }

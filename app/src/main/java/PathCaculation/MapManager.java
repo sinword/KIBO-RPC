@@ -9,13 +9,15 @@ import Basic.Cuboid;
 import Basic.LineSegment;
 import java.util.*;
 
-public class MapManager{
+public class MapManager {
     public Graph BasicGraph;
     public IMapConfig config;
-    public MapManager(IMapConfig config, double distance_from_KOZ){
+
+    public MapManager(IMapConfig config, double distance_from_KOZ) {
         this.config = config;
         createBasicGraph(config.getAllKOZs(), distance_from_KOZ);
     }
+
     private void createBasicGraph(Cuboid[] KOZs, double distance_from_KOZ) {
         BasicGraph = new Graph(true);
         for (int i = 0; i < KOZs.length; i++) {
@@ -31,14 +33,13 @@ public class MapManager{
 
         Node[] AllNodes = BasicGraph.nodes.toArray(new Node[BasicGraph.nodes.size()]);
 
-
-        for (int i = 0; i < AllNodes.length; i++){
-            for (int j = 0; j < AllNodes.length; j++){
-                if (i == j){
+        for (int i = 0; i < AllNodes.length; i++) {
+            for (int j = 0; j < AllNodes.length; j++) {
+                if (i == j) {
                     continue;
                 }
                 LineSegment line = new LineSegment(AllNodes[i].data, AllNodes[j].data);
-                if (NotInKOZ(line)){
+                if (NotInKOZ(line)) {
                     BasicGraph.addEdge(new Edge(AllNodes[i], AllNodes[j], line.getLength()));
                 }
             }
@@ -49,8 +50,8 @@ public class MapManager{
 
     private boolean NotInKOZ(LineSegment line){
         Cuboid[] KOZs = config.getAllKOZs();
-        for (int i = 0; i < KOZs.length; i++){
-            if (KOZs[i].isCross(line)){
+        for (int i = 0; i < KOZs.length; i++) {
+            if (KOZs[i].isCross(line)) {
                 return false;
             }
         }
@@ -58,8 +59,8 @@ public class MapManager{
     }
     private boolean NotInKOZ(Vector3D point){
         Cuboid[] KOZs = config.getAllKOZs();
-        for (int i = 0; i < KOZs.length; i++){
-            if (KOZs[i].isInside(point)){
+        for (int i = 0; i < KOZs.length; i++) {
+            if (KOZs[i].isInside(point)) {
                 return false;
             }
         }
@@ -119,27 +120,24 @@ public class MapManager{
 
         Node[] path = TempGraph.getShortestPath(start, end);
         Vector3D[] result = new Vector3D[path.length];
-        for (int i = 0; i < path.length; i++){
+        for (int i = 0; i < path.length; i++) {
             result[i] = path[i].data;
         }
         return result;
     }
-    private void addNewNode(Graph graph, Node n){
+
+    private void addNewNode(Graph graph, Node n) {
         graph.addNode(n);
         Node[] AllNodes = graph.nodes.toArray(new Node[graph.nodes.size()]);
-        for (int i = 0; i < AllNodes.length; i++){
-            if (AllNodes[i] == n){
+        for (int i = 0; i < AllNodes.length; i++) {
+            if (AllNodes[i] == n) {
                 continue;
             }
             LineSegment line = new LineSegment(AllNodes[i].data, n.data);
-            if (NotInKOZ(line)){
+            if (NotInKOZ(line)) {
                 graph.addEdge(new Edge(AllNodes[i], n, line.getLength()));
             }
         }
 
     }
 }
-
-
-
-

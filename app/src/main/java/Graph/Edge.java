@@ -7,24 +7,26 @@ public class Edge {
     public Node to;
     public double weight;
 
-    public Edge(Node from, Node to, double weight){
+    public Edge(Node from, Node to, double weight) {
         this.from = from;
         this.to = to;
         this.weight = weight;
     }
 
-    public Edge getReverseEdge(){
+    public Edge getReverseEdge() {
         Edge reverseEdge = new Edge(to, from, weight);
         return reverseEdge;
     }
+
     @Override
     public String toString() {
         return "Edge{" +
-                 from.data +
+                from.data +
                 " -> " + to.data +
                 ", weight=" + weight +
                 '}';
     }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -36,6 +38,7 @@ public class Edge {
         Edge other = (Edge) obj;
         return from == other.from && to == other.to && weight == other.weight;
     }
+
     @Override
     public int hashCode() {
         return Objects.hash(from, to, weight);
