@@ -60,6 +60,18 @@ public class MapManager{
         }
         return true;
     }
+    public Integer getShortestAvailablePointID(Vector3D currentPosition, List<Integer> availablePoints){
+        Map<Integer, Double> distanceMap = getAllDistanceFromCurrentPosition(currentPosition);
+        double min = Double.MAX_VALUE;
+        Integer result = -1;
+        for (Map.Entry<Integer, Double> entry : distanceMap.entrySet()){
+            if (availablePoints.contains(entry.getKey()) && entry.getValue() < min){
+                min = entry.getValue();
+                result = entry.getKey();
+            }
+        }
+        return result;
+    }
 
     public Map<Integer, Double> getAllDistanceFromCurrentPosition(Vector3D currentPosition){
         Map<Integer, Transform> map = mapConfig.getTransformMap();
@@ -72,7 +84,7 @@ public class MapManager{
         return result;
     }
 
-    public double getPathLength(Vector3D[] path){
+    private double getPathLength(Vector3D[] path){
         double result = 0;
         for (int i = 0; i < path.length - 1; i++){
             result += path[i].distance(path[i + 1]);
