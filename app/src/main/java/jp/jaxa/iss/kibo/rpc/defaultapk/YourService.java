@@ -92,7 +92,7 @@ public class YourService extends KiboRpcService {
         start();
 
         Log.i(TAG, "Move to QRcode point");
-        moveToFromCurrentPosition(mapConfig.StablePoint);
+        moveToFromCurrentPosition(mapConfig.Point1);
         Log.i(TAG, "Move to Stable point");
         moveToQRCodePoint();
 
