@@ -1,5 +1,8 @@
 package Basic;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class Cuboid {
     public final Vector3D maxPoint;
     public final Vector3D minPoint;
