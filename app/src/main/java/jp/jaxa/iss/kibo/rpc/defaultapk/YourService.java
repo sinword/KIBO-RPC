@@ -97,7 +97,15 @@ public class YourService extends KiboRpcService {
         //moveToByShortestPath(mapConfig.Point1, mapConfig.Point2);
 
     }
-
+    private void moveToShortestAvailablePoint(){
+        List<Integer> activeTarget = api.getActiveTargets();
+        if(!QRCodeDown){
+            activeTarget.add(0);
+        }
+        Vector3D currentPosition = new Vector3D(api.getRobotKinematics().getPosition());
+        Integer shortestPoint = mapManager.getShortestAvailablePointID(currentPosition, activeTarget);
+        moveToFromCurrentPosition(getPointFromID(shortestPoint));
+    }
 
     private void moveToQRCodePoint(){
         moveToFromCurrentPosition(mapConfig.QRCodePoint);
@@ -110,24 +118,9 @@ public class YourService extends KiboRpcService {
         moveToFromCurrentPosition(des);
     }
 
-    private Map<Integer, Double> getDistanceMap(){
-        Map<Integer, Double> DistanceMap = new HashMap<Integer, Double>();
-        for (int i = 1; i <= 7; i++) {
-            DistanceMap.put(i, getDistanceToPosition(getPointFromID(i)));
-        }
-        DistanceMap.put(0, getDistanceToPosition(mapConfig.QRCodePoint));
-        return DistanceMap;
-    }
-
 
     private Transform getPointFromID(int id){
-        return mapConfig.AllPoints[id - 1];
-    }
-    private double getDistanceToPosition(Transform transform){
-        Kinematics kinematics = api.getRobotKinematics();
-        Point point = kinematics.getPosition();
-        Vector3D[] path = mapManager.getShortestPath(new Vector3D(point), transform.getVector3DPosition());
-        return mapManager.getPathLength(path);
+        return mapConfig.getTransformMap()[id];
     }
     private void moveToFromCurrentPosition(Transform to){
         Kinematics kinematics = api.getRobotKinematics();
