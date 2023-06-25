@@ -153,16 +153,39 @@ public class YourService extends KiboRpcService {
     }
 
     private void handleTarget(int targetNumber) {
-        
-        Mat image = api.getMatNavCam();
+        int loopCount = 0;
         Quaternion original = api.getRobotKinematics().getOrientation();
-        double[] vector = TargetManager.calibrateLocation(image,
-                original);
-        api.saveMatImage(image, "target_" + targetNumber + "_" + targetConfig.count[targetNumber]
-                + ".png");
-        TargetConfig.count[targetNumber]++;
-        api.relativeMoveTo(new Point(vector[0], vector[1], vector[2]), original, true);
+        float[] closestValues = { snapToValues(original.getX()), snapToValues(original.getY()),
+                snapToValues(original.getZ()), snapToValues(original.getW()) };
+        Quaternion newOrientation = new Quaternion(closestValues[0], closestValues[1], closestValues[2],
+                closestValues[3]);
+        double movement = Integer.MAX_VALUE;
+        while (movement > 3 && loopCount < 3) {
+            Mat image = api.getMatNavCam();
+            double[] vector = TargetManager.calibrateLocation(image,
+                    original);
+            api.relativeMoveTo(new Point(vector[0], vector[1], vector[2]), newOrientation, true);
+            movement = Math.sqrt(Math.pow(vector[0], 2) + Math.pow(vector[1], 2) + Math.pow(vector[2], 2));
+            loopCount++;
+        }
+
         api.laserControl(true);
         api.takeTargetSnapshot(targetNumber);
+    }
+
+    public static float snapToValues(float input) {
+        float[] values = { -1, -0.707f, -0.5f, 0, 0.5f, 0.707f, 1 };
+        float closestValue = values[0];
+        float smallestDifference = Math.abs(input - closestValue);
+
+        for (int i = 1; i < values.length; i++) {
+            float difference = Math.abs(input - values[i]);
+            if (difference < smallestDifference) {
+                closestValue = values[i];
+                smallestDifference = difference;
+            }
+        }
+
+        return closestValue;
     }
 }

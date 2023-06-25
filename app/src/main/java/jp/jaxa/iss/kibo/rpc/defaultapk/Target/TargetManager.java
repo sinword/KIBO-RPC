@@ -81,7 +81,7 @@ public class TargetManager {
         }
         // // LineRotatoin class will calculate the angle that kibo should turn
         // double[] orientation = calculateNewOrientation(
-        // LineRotation.getQuaternion(targetPoint), originalOrientation);
+        // LineRotation.getQuaternion(targetPoint), originalOrientation);F
         // Quaternion orientationQuaternion = new Quaternion((float) orientation[1],
         // (float) orientation[2],
         // (float) orientation[3], (float) orientation[0]);
