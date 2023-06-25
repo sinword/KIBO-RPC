@@ -18,8 +18,8 @@ public class Graph{
     }
 
     public Graph copy(){
-        Set<Node> newNodes = new HashSet<>();
-        Set<Edge> newEdges = new HashSet<>();
+        Set<Node> newNodes = new HashSet<Node>();
+        Set<Edge> newEdges = new HashSet<Edge>();
         for(Node node : nodes){
             newNodes.add(new Node(node.name ,node.data));
         }

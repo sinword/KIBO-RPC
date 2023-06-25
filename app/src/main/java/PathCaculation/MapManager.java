@@ -18,7 +18,7 @@ public class MapManager{
     private void createBasicGraph(Cuboid[] KOZs, double distance_from_KOZ) {
         BasicGraph = new Graph(true);
         for (int i = 0; i < KOZs.length; i++) {
-            Vector3D[] KOZ_points = KOZs[i].getPointsOutsideCuboid(distance_from_KOZ);
+            Vector3D[] KOZ_points = KOZs[i].getCuboidOutside(distance_from_KOZ).getCuboidPoints();
             for (int j = 0; j < KOZ_points.length; j++) {
                 Node n = new Node("KOZ" + i + "_point" + j, KOZ_points[j]);
                 BasicGraph.addNode(n);

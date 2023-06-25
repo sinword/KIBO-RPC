@@ -48,11 +48,11 @@ public class Cuboid {
 
         return points;
     }
-    public Vector3D[] getPointsOutsideCuboid(double distance) {
+
+    public Cuboid getCuboidOutside(double distance) {
         Vector3D newMax = new Vector3D(maxPoint.getX() + distance, maxPoint.getY() + distance, maxPoint.getZ() + distance);
         Vector3D newMin = new Vector3D(minPoint.getX() - distance, minPoint.getY() - distance, minPoint.getZ() - distance);
-        Cuboid newCuboid = new Cuboid(newMax, newMin);
-        return newCuboid.getCuboidPoints();
+        return new Cuboid(newMax, newMin);
     }
 
     public Plane[] getAllPlanes(){
