@@ -77,7 +77,7 @@ public class MapManager {
     }
 
     public Integer getShortestAvailablePointID(Vector3D currentPosition, List<Integer> availablePoints, long remainingTime){
-        Map<Integer, Double> distanceMap = getAllDistanceFromCurrentPosition(currentPosition, remainingTime);
+        Map<Integer, Double> distanceMap = getAllDistanceFromCurrentPosition(currentPosition);
         double min = Double.MAX_VALUE;
         Integer result = -1;
         for (Map.Entry<Integer, Double> entry : distanceMap.entrySet()){
@@ -89,7 +89,7 @@ public class MapManager {
         return result;
     }
 
-    public Map<Integer, Double> getAllDistanceFromCurrentPosition(Vector3D currentPositione){
+    public Map<Integer, Double> getAllDistanceFromCurrentPosition(Vector3D currentPosition){
         Map<Integer, Transform> map = config.getTransformMap();
         Map<Integer, Double> result = new HashMap<Integer, Double>();
         for (Map.Entry<Integer, Transform> entry : map.entrySet()){
