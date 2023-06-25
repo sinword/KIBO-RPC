@@ -76,7 +76,7 @@ public class MapManager {
         return false;
     }
 
-    public Integer getShortestAvailablePointID(Vector3D currentPosition, List<Integer> availablePoints, long remainingTime){
+    public Integer getShortestAvailablePointID(Vector3D currentPosition, List<Integer> availablePoints){
         Map<Integer, Double> distanceMap = getAllDistanceFromCurrentPosition(currentPosition);
         double min = Double.MAX_VALUE;
         Integer result = -1;

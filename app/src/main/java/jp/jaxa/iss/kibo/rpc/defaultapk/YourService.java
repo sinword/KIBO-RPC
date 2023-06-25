@@ -82,7 +82,7 @@ public class YourService extends KiboRpcService {
 
     private void MainRun() {
         while (true) {
-            if(getRemainingDistance() < 60000){
+            if( api.getTimeRemaining().get(1) < 60000){
                 api.notifyGoingToGoal();
                 handleGoal();
                 break;
@@ -119,8 +119,7 @@ public class YourService extends KiboRpcService {
             activeTarget.add(0);
         }
         Vector3D currentPosition = new Vector3D(api.getRobotKinematics().getPosition());
-        Integer shortestPoint = mapManager.getShortestAvailablePointID(currentPosition, activeTarget,
-                api.getTimeRemaining().get(1));
+        Integer shortestPoint = mapManager.getShortestAvailablePointID(currentPosition, activeTarget);
         moveToFromCurrentPosition(getPointFromID(shortestPoint));
         return shortestPoint;
     }
