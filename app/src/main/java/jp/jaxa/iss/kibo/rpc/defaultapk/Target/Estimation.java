@@ -47,8 +47,6 @@ public class Estimation {
                         Log.i(TAG, "id: " + id);
                         double[] data = new double[3];
                         tvecs.get(i, 0, data);
-
-                        Log.i(TAG, "size:" + data.length);
                         Log.i(TAG, "data: " + data[0] + ", " + data[1] + ", " + data[2]);
                         pos.x += data[0];
                         pos.y += data[1];

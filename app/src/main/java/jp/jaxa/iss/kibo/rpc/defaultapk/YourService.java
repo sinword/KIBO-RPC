@@ -86,13 +86,13 @@ public class YourService extends KiboRpcService {
         moveToFromCurrentPosition(des);
     }
 
-    private Integer getNextDestination(List<Integer> activatedTargets){
+    private Integer getNextDestination(List<Integer> activatedTargets) {
         Map<Integer, Double> DistanceMap = getDistanceMap();
         double minDistance = 100000;
         int target = -1;
         for (int i = 0; i < activatedTargets.size(); i++) {
             double distance = DistanceMap.get(activatedTargets.get(i));
-            if (distance < minDistance){
+            if (distance < minDistance) {
                 minDistance = distance;
                 target = activatedTargets.get(i);
             }
@@ -100,7 +100,7 @@ public class YourService extends KiboRpcService {
         return target;
     }
 
-    private Map<Integer, Double> getDistanceMap(){
+    private Map<Integer, Double> getDistanceMap() {
         Map<Integer, Double> DistanceMap = new HashMap<Integer, Double>();
         for (int i = 1; i <= 7; i++) {
             DistanceMap.put(i, getDistanceToPosition(getPointFromID(i)));
@@ -109,14 +109,13 @@ public class YourService extends KiboRpcService {
         return DistanceMap;
     }
 
-    private Transform getPointFromID(int id){
+    private Transform getPointFromID(int id) {
         return mapConfig.AllPoints[id - 1];
     }
 
     private void moveToQRCodePoint() {
         moveToFromCurrentPosition(mapConfig.QRCodePoint);
     }
-
 
     private double getDistanceToPosition(Transform transform) {
         Vector3D[] path = mapManager.getShortestPath(new Vector3D(api.getRobotKinematics().getPosition()),
@@ -154,13 +153,15 @@ public class YourService extends KiboRpcService {
     }
 
     private void handleTarget(int targetNumber) {
+        
         Mat image = api.getMatNavCam();
-        Quaternion absoluteOrientation = TargetManager.calibrateLocation(image,
-                api.getRobotKinematics().getOrientation());
+        Quaternion original = api.getRobotKinematics().getOrientation();
+        double[] vector = TargetManager.calibrateLocation(image,
+                original);
         api.saveMatImage(image, "target_" + targetNumber + "_" + targetConfig.count[targetNumber]
                 + ".png");
         TargetConfig.count[targetNumber]++;
-        api.relativeMoveTo(new Point(0, 0, 0), absoluteOrientation, true);
+        api.relativeMoveTo(new Point(vector[0], vector[1], vector[2]), original, true);
         api.laserControl(true);
         api.takeTargetSnapshot(targetNumber);
     }
