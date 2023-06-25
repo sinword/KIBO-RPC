@@ -162,8 +162,7 @@ public class YourService extends KiboRpcService {
         double movement = Integer.MAX_VALUE;
         while (movement > 3 && loopCount < 3) {
             Mat image = api.getMatNavCam();
-            double[] vector = TargetManager.calibrateLocation(image,
-                    original);
+            double[] vector = TargetManager.calibrateLocation(image, newOrientation);
             api.relativeMoveTo(new Point(vector[0], vector[1], vector[2]), newOrientation, true);
             movement = Math.sqrt(Math.pow(vector[0], 2) + Math.pow(vector[1], 2) + Math.pow(vector[2], 2));
             loopCount++;
