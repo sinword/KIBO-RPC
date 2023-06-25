@@ -47,6 +47,25 @@ public class Cuboid {
         return points;
     }
 
+    public Vector3D[] getAvailablePoints(){
+        // 取得Cuboid的所有可用頂點
+        Set<Vector3D> points = new HashSet<Vector3D>();
+        Vector3D[] ps = getCuboidPoints();
+        for (Vector3D p : ps) {
+            if (isInside(p)) {
+                points.add(p);
+            }
+        }
+        for(int i = 0; i < ps.length; i++){
+            for(int j = i + 1; j < ps.length; j++){
+                LineSegment line = new LineSegment(ps[i], ps[j]);
+                points.add(line.getMiddlePoint());
+            }
+        }
+
+        return points.toArray(new Vector3D[points.size()]);
+    }
+
     public Vector3D[] getPointsOutsideCuboid(double distance) {
         Vector3D newMax = new Vector3D(maxPoint.getX() + distance, maxPoint.getY() + distance,
                 maxPoint.getZ() + distance);
@@ -54,6 +73,13 @@ public class Cuboid {
                 minPoint.getZ() - distance);
         Cuboid newCuboid = new Cuboid(newMax, newMin);
         return newCuboid.getCuboidPoints();
+    }
+    public Cuboid getCuboidOutsideCuboid(double distance) {
+        Vector3D newMax = new Vector3D(maxPoint.getX() + distance, maxPoint.getY() + distance,
+                maxPoint.getZ() + distance);
+        Vector3D newMin = new Vector3D(minPoint.getX() - distance, minPoint.getY() - distance,
+                minPoint.getZ() - distance);
+        return new Cuboid(newMax, newMin);
     }
 
     public Plane[] getAllPlanes() {
