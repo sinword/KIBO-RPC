@@ -21,12 +21,9 @@ public class TargetManager {
     private static final String TAG = "TargetManager";
 
     private static void inputPoints(double[] targetPoint, Point3 pos) {
-        // targetPoint[0] = pos.z + TargetConfig.NAV_CAM_POSITION[0];
-        // targetPoint[1] = pos.x + TargetConfig.NAV_CAM_POSITION[1];
-        // targetPoint[2] = pos.y + TargetConfig.NAV_CAM_POSITION[2];
-        targetPoint[0] = pos.z;
-        targetPoint[1] = pos.x;
-        targetPoint[2] = pos.y;
+        targetPoint[0] = pos.z + TargetConfig.NAV_CAM_POSITION[0];
+        targetPoint[1] = pos.x + TargetConfig.NAV_CAM_POSITION[1];
+        targetPoint[2] = pos.y + TargetConfig.NAV_CAM_POSITION[2];
         Log.i(TAG, "Relative to center of kibo in its cords: " + targetPoint[0] + ", " + targetPoint[1] + ", "
                 + targetPoint[2]);
     }
