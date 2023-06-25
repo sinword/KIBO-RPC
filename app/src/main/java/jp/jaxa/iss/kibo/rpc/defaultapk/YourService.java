@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 import static org.opencv.android.Utils.matToBitmap;
 import PathCaculation.MapConfig;
 import PathCaculation.MapManager;
@@ -82,42 +81,42 @@ public class YourService extends KiboRpcService {
         runPlan1();
     }
 
-    private void MainRun(){
-        while(true){
+    private void MainRun() {
+        while (true) {
             Integer point = moveToShortestAvailablePoint();
             Log.i(TAG, "[MainRun] move to point: " + point);
-            if(point == 0){
+            if (point == 0) {
                 QRCodeDone = true;
                 QRCodeResult = HandleQRCode();
-            }
-            else if(point == 8){
+            } else if (point == 8) {
                 api.notifyGoingToGoal();
                 handleGoal();
                 break;
-            }
-            else if(point >= 1 && point <= 7){
+            } else if (point >= 1 && point <= 7) {
                 handleTarget(point);
             }
-            
-            if(getRemainingDistance() < 0.1){
+
+            if (getRemainingDistance() < 0.1) {
                 break;
             }
         }
     }
-    private void handleGoal(){
-        if (!QRCodeDone){
+
+    private void handleGoal() {
+        if (!QRCodeDone) {
             Log.i(TAG, "No QRCode detected");
         }
         api.reportMissionCompletion(QRCodeResult);
     }
 
-    private Integer moveToShortestAvailablePoint(){
+    private Integer moveToShortestAvailablePoint() {
         List<Integer> activeTarget = api.getActiveTargets();
-        if(!QRCodeDone){
+        if (!QRCodeDone) {
             activeTarget.add(0);
         }
         Vector3D currentPosition = new Vector3D(api.getRobotKinematics().getPosition());
-        Integer shortestPoint = mapManager.getShortestAvailablePointID(currentPosition, activeTarget);
+        Integer shortestPoint = mapManager.getShortestAvailablePointID(currentPosition, activeTarget,
+                api.getTimeRemaining().get(1));
         moveToFromCurrentPosition(getPointFromID(shortestPoint));
         return shortestPoint;
     }
@@ -127,24 +126,26 @@ public class YourService extends KiboRpcService {
         moveToFromCurrentPosition(des);
     }
 
-    private Double getRemainingDistance(){
+    private Double getRemainingDistance() {
         List<Long> timeList = api.getTimeRemaining();
         return time2Distance(timeList.get(1));
     }
-    private Double getActiveTargetRemainingDistance(){
+
+    private Double getActiveTargetRemainingDistance() {
         List<Long> timeList = api.getTimeRemaining();
         return time2Distance(timeList.get(0));
     }
-    private Double time2Distance(Long millisecond){
+
+    private Double time2Distance(Long millisecond) {
         double Velocity = 0.5; // m/s
         return Velocity * millisecond / 1000;
     }
 
-
-    private Transform getPointFromID(int id){
+    private Transform getPointFromID(int id) {
         return mapConfig.getTransformMap().get(id);
     }
-    private void moveToFromCurrentPosition(Transform to){
+
+    private void moveToFromCurrentPosition(Transform to) {
         Kinematics kinematics = api.getRobotKinematics();
         Point point = kinematics.getPosition();
         moveToByShortestPath(point, to);
@@ -233,23 +234,23 @@ public class YourService extends KiboRpcService {
         int count_max = 5;
         String report_message = "";
 
-        while(contents == null && count < count_max) {
+        while (contents == null && count < count_max) {
             Log.i(TAG, "QRcode event start!");
             long start_time = SystemClock.elapsedRealtime();
             // turn on the front flash light
             flash_control(true);
             // scan QRcode
             Mat qr_mat = api.getMatNavCam();
-            Bitmap bMap = resizeImage(qr_mat, 2000, 1500);	
+            Bitmap bMap = resizeImage(qr_mat, 2000, 1500);
 
             int[] intArray = new int[bMap.getWidth() * bMap.getHeight()];
             bMap.getPixels(intArray, 0, bMap.getWidth(), 0, 0, bMap.getWidth(), bMap.getHeight());
             LuminanceSource source = new RGBLuminanceSource(bMap.getWidth(), bMap.getHeight(), intArray);
             BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
 
-            try{
+            try {
                 com.google.zxing.Result result = new QRCodeReader().decode(bitmap);
-                contents = result.getText();	// 得到掃到的資料
+                contents = result.getText(); // 得到掃到的資料
                 Log.i(TAG, "QR code is detected, content is " + contents);
 
                 switch (contents) {
@@ -275,15 +276,14 @@ public class YourService extends KiboRpcService {
                         report_message = null;
                         break;
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 Log.i(TAG, "QR code is not detected");
             }
 
             Log.i(TAG, "QRcode event stop");
             long stop_time = SystemClock.elapsedRealtime();
 
-            Log.i(TAG, "QRcode event spent time: "+ (stop_time-start_time)/1000);
+            Log.i(TAG, "QRcode event spent time: " + (stop_time - start_time) / 1000);
             count++;
         }
         flash_control(false);
@@ -293,16 +293,15 @@ public class YourService extends KiboRpcService {
     }
 
     private void flash_control(boolean status) { // 新增 thread 一秒等待 flash打開
-        if(status) {
-            api.flashlightControlFront(0.05f); //1st code是給 0.025f
-            api.flashlightControlBack(0.025f);	// 1st code 沒給
+        if (status) {
+            api.flashlightControlFront(0.05f); // 1st code是給 0.025f
+            api.flashlightControlBack(0.025f); // 1st code 沒給
             try {
                 Thread.sleep(1000); // wait a few seconds
-            }
-            catch (InterruptedException e) {
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-        }
-        else api.flashlightControlFront(0.00f);
+        } else
+            api.flashlightControlFront(0.00f);
     }
 }
