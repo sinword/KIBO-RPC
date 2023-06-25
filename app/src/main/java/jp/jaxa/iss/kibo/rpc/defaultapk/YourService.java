@@ -114,8 +114,10 @@ public class YourService extends KiboRpcService {
     private void MainRun(){
         while(true){
             Integer point = moveToShortestAvailablePoint();
+            Log.i(TAG, "[MainRun] move to point: " + point);
             if(point == 0){
                 QRCodeDone = true;
+                QRCodeResult = HandleQRCode();
             }
             else if(point == 8){
                 api.notifyGoingToGoal();
@@ -135,7 +137,6 @@ public class YourService extends KiboRpcService {
         if (!QRCodeDone){
             Log.i(TAG, "No QRCode detected");
         }
-        QRCodeResult = HandleQRCode();
         api.reportMissionCompletion(QRCodeResult);
     }
 
