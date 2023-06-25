@@ -43,7 +43,7 @@ public class TargetManager {
         return orientation;
     }
 
-    public static double[] calibrateLocation(Mat image, Quaternion originalOrientation) {
+    public static double[] calibrateLocation(Mat image, Quaternion originalOrientation, int targetId) {
         Log.i(TAG, "In calibrateLocation");
 
         // this method will check the image and return the ids and corners of the
@@ -63,7 +63,7 @@ public class TargetManager {
 
         // calculate the position of the target
         Estimation estimation = new Estimation(ids, rvecs, tvecs);
-        Point3 pos = estimation.getEstimatedPos();
+        Point3 pos = estimation.getEstimatedPos(targetId);
         Log.i(TAG, "Relative to camera: " + pos.x + ", " + pos.y + ", " + pos.z);
 
         double[] targetPoint = new double[3];

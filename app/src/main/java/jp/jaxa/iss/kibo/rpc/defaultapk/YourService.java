@@ -184,7 +184,7 @@ public class YourService extends KiboRpcService {
         double movement = Integer.MAX_VALUE;
         while (movement > 0.03 && loopCount < 3) {
             Mat image = api.getMatNavCam();
-            double[] vector = TargetManager.calibrateLocation(image, newOrientation);
+            double[] vector = TargetManager.calibrateLocation(image, newOrientation, targetNumber);
             double smallest = Math.abs(vector[0]);
             int id = 0;
             for (int i = 1; i < vector.length; i++) {

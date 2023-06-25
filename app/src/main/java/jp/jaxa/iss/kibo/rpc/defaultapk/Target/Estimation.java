@@ -36,7 +36,7 @@ public class Estimation {
          * 
          * @return the position of the target
          */
-        public Point3 getEstimatedPos() {
+        public Point3 getEstimatedPos(int targetId) {
                 Point3 pos = new Point3(0, 0, 0);
                 Log.i(TAG, "In getEstimatedPos");
                 Log.i(TAG, "ids: " + ids.dump());
@@ -44,10 +44,14 @@ public class Estimation {
 
                 for (int i = 0; i < tvecs.rows(); i++) {
                         int id = (int) ids.get(i, 0)[0];
+                        if ((id - 1) / 4 != (targetId - 1)) {
+                                continue;
+                        }
                         Log.i(TAG, "id: " + id);
                         double[] data = new double[3];
                         tvecs.get(i, 0, data);
                         Log.i(TAG, "data: " + data[0] + ", " + data[1] + ", " + data[2]);
+
                         pos.x += data[0];
                         pos.y += data[1];
                         pos.z += data[2];
