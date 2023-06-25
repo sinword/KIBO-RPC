@@ -92,6 +92,8 @@ public class YourService extends KiboRpcService {
         start();
 
         Log.i(TAG, "Move to QRcode point");
+        moveToFromCurrentPosition(mapConfig.StablePoint);
+        Log.i(TAG, "Move to Stable point");
         moveToQRCodePoint();
 
         Log.i(TAG, "Handle QRcode");
