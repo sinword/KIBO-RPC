@@ -51,7 +51,7 @@ import static org.opencv.core.Core.gemm;
 public class YourService extends KiboRpcService {
     private MapConfig mapConfig = new MapConfig();
     private MapManager mapManager = new MapManager(mapConfig, 0.12f);
-    private boolean QRCodeDown = false;
+    private boolean QRCodeDone = false;
     private final String TAG = this.getClass().getSimpleName();
     private Config config;
     // private Map<String, String> QRCodeResultMap = new HashMap<String, String>();
@@ -115,7 +115,7 @@ public class YourService extends KiboRpcService {
         while(true){
             Integer point = moveToShortestAvailablePoint();
             if(point == 0){
-                QRCodeDown = true;
+                QRCodeDone = true;
             }
             else if(point == 8){
                 api.notifyGoingToGoal();
@@ -132,7 +132,7 @@ public class YourService extends KiboRpcService {
         }
     }
     private void handleGoal(){
-        if (!QRCOdeDown){
+        if (!QRCodeDone){
             Log.i(TAG, "No QRCode detected");
         }
         QRCodeResult = HandleQRCode();
@@ -141,7 +141,7 @@ public class YourService extends KiboRpcService {
 
     private Integer moveToShortestAvailablePoint(){
         List<Integer> activeTarget = api.getActiveTargets();
-        if(!QRCodeDown){
+        if(!QRCodeDone){
             activeTarget.add(0);
         }
         Vector3D currentPosition = new Vector3D(api.getRobotKinematics().getPosition());
