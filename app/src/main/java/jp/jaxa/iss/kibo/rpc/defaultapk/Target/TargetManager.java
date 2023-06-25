@@ -68,7 +68,8 @@ public class TargetManager {
 
         double[] targetPoint = new double[3];
         inputPoints(targetPoint, pos);
-        double[] d = {0, targetPoint[1] - TargetConfig.LASER_POSITION[1], targetPoint[2] - TargetConfig.LASER_POSITION[2]};
+        double[] d = { 0, targetPoint[1] - TargetConfig.LASER_POSITION[1],
+                targetPoint[2] - TargetConfig.LASER_POSITION[2] };
         Log.i(TAG, "d: " + d[0] + ", " + d[1] + ", " + d[2]);
 
         double[] originalOrientationInDouble = { originalOrientation.getW(), originalOrientation.getX(),
@@ -90,53 +91,44 @@ public class TargetManager {
         return vectorInOriginalSystemArray;
     }
 
-     public static Mat quaternionToRotationMatrix(double[] quaternion) {
-        double q0 = quaternion[0];
-        double q1 = quaternion[1];
-        double q2 = quaternion[2];
-        double q3 = quaternion[3];
+    public static Mat quaternionToRotationMatrix(double[] orientation) {
+        // Create a 3x3 rotation matrix
+        Mat rotationMatrix = new Mat(3, 3, CvType.CV_64FC1);
 
-        double r00 = 2 * (q0 * q0 + q1 * q1) - 1;
-        double r01 = 2 * (q1 * q2 - q0 * q3);
-        double r02 = 2 * (q1 * q3 + q0 * q2);
-        double r10 = 2 * (q1 * q2 + q0 * q3);
-        double r11 = 2 * (q0 * q0 + q2 * q2) - 1;
-        double r12 = 2 * (q2 * q3 - q0 * q1);
-        double r20 = 2 * (q1 * q3 - q0 * q2);
-        double r21 = 2 * (q2 * q3 + q0 * q1);
-        double r22 = 2 * (q0 * q0 + q3 * q3) - 1;
+        // Convert quaternion to rotation matrix
+        double x = orientation[0];
+        double y = orientation[1];
+        double z = orientation[2];
+        double w = orientation[3];
 
-        Mat rotationMatrix = new Mat(3, 3, CvType.CV_64F);
-        rotationMatrix.put(0, 0, r00);
-        rotationMatrix.put(0, 1, r01);
-        rotationMatrix.put(0, 2, r02);
-        rotationMatrix.put(1, 0, r10);
-        rotationMatrix.put(1, 1, r11);
-        rotationMatrix.put(1, 2, r12);
-        rotationMatrix.put(2, 0, r20);
-        rotationMatrix.put(2, 1, r21);
-        rotationMatrix.put(2, 2, r22);
+        rotationMatrix.put(0, 0, 1 - 2 * (y * y + z * z));
+        rotationMatrix.put(0, 1, 2 * (x * y - z * w));
+        rotationMatrix.put(0, 2, 2 * (x * z + y * w));
+
+        rotationMatrix.put(1, 0, 2 * (x * y + z * w));
+        rotationMatrix.put(1, 1, 1 - 2 * (x * x + z * z));
+        rotationMatrix.put(1, 2, 2 * (y * z - x * w));
+
+        rotationMatrix.put(2, 0, 2 * (x * z - y * w));
+        rotationMatrix.put(2, 1, 2 * (y * z + x * w));
+        rotationMatrix.put(2, 2, 1 - 2 * (x * x + y * y));
 
         return rotationMatrix;
     }
 
     public static Mat transformVector(Mat rotationMatrix, double[] vector) {
-        Mat vectorInRotatedSystem = new Mat(3, 1, CvType.CV_64FC1);
-        vectorInRotatedSystem.put(0, 0, vector[0]);
-        vectorInRotatedSystem.put(1, 0, vector[1]);
-        vectorInRotatedSystem.put(2, 0, vector[2]);
+        // Create a 3x1 column vector
+        Mat vectorMat = new Mat(3, 1, CvType.CV_64FC1);
+        vectorMat.put(0, 0, vector[0]);
+        vectorMat.put(1, 0, vector[1]);
+        vectorMat.put(2, 0, vector[2]);
 
-        Mat inverseRotationMatrix = new Mat();
-        invert(rotationMatrix, inverseRotationMatrix);
+        // Transform the vector by multiplying with the rotation matrix
+        Mat transformedVector = new Mat();
+        gemm(rotationMatrix, vectorMat, 1, new Mat(), 0, transformedVector);
 
-        Mat vectorInOriginalSystem = new Mat();
-        // Rotate a vector from the original system by the inverse of the rotation
-        // matrix
-        gemm(inverseRotationMatrix, vectorInRotatedSystem, 1, new Mat(), 0, vectorInOriginalSystem);
-
-        return vectorInOriginalSystem;
+        return transformedVector;
     }
-
 
     /*
      * This method will multiply two quaternions using Hamilton product rule

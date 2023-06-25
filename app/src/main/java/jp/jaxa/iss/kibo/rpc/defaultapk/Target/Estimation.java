@@ -53,6 +53,7 @@ public class Estimation {
                         pos.z += data[2];
                         switch (id % 4) {
                                 case 1:
+                                        Log.i(TAG, "case 1: top right");
                                         // dx = -0.1, dy = 0.0375
                                         pos.x += -0.1f * rotationMatrixData[i][0][0]
                                                         + 0.0375f * rotationMatrixData[i][0][1];
@@ -62,6 +63,7 @@ public class Estimation {
                                                         + 0.0375f * rotationMatrixData[i][2][1];
                                         break;
                                 case 2:
+                                        Log.i(TAG, "case 2: top left");
                                         // dx = 0.1, dy = 0.0375
                                         pos.x += 0.1f * rotationMatrixData[i][0][0]
                                                         + 0.0375f * rotationMatrixData[i][0][1];
@@ -71,6 +73,7 @@ public class Estimation {
                                                         + 0.0375f * rotationMatrixData[i][2][1];
                                         break;
                                 case 3:
+                                        Log.i(TAG, "case 3: bottom left");
                                         // dx = 0.1, dy = -0.0375
                                         pos.x += 0.1f * rotationMatrixData[i][0][0]
                                                         - 0.0375f * rotationMatrixData[i][0][1];
@@ -80,6 +83,7 @@ public class Estimation {
                                                         - 0.0375f * rotationMatrixData[i][2][1];
                                         break;
                                 case 0:
+                                        Log.i(TAG, "case 0: bottom right");
                                         // dx = -0.1, dy = -0.0375
                                         pos.x += -0.1f * rotationMatrixData[i][0][0]
                                                         - 0.0375f * rotationMatrixData[i][0][1];
