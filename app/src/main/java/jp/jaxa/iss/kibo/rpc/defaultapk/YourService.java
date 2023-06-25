@@ -115,7 +115,7 @@ public class YourService extends KiboRpcService {
                 QRCodeDown = true;
             }
             else if(point == 8){
-                handleGoal();
+                // handleGoal();
                 break;
             }
             else if(point >= 1 && point <= 7){
@@ -165,7 +165,7 @@ public class YourService extends KiboRpcService {
 
 
     private Transform getPointFromID(int id){
-        return mapConfig.getTransformMap()[id];
+        return mapConfig.getTransformMap().get(id);
     }
     private void moveToFromCurrentPosition(Transform to){
         Kinematics kinematics = api.getRobotKinematics();
