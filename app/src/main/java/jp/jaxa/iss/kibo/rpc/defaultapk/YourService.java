@@ -83,6 +83,7 @@ public class YourService extends KiboRpcService {
     private void MainRun() {
         while (true) {
             if( api.getTimeRemaining().get(1) < 60000){
+                moveToFromCurrentPosition(mapConfig.GoalPoint);
                 api.notifyGoingToGoal();
                 handleGoal();
                 break;
