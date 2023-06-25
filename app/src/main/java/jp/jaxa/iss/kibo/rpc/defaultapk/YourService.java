@@ -82,6 +82,11 @@ public class YourService extends KiboRpcService {
 
     private void MainRun() {
         while (true) {
+            if(getRemainingDistance() < 60000){
+                api.notifyGoingToGoal();
+                handleGoal();
+                break;
+            }
             Integer point = moveToShortestAvailablePoint();
             Log.i(TAG, "[MainRun] move to point: " + point);
             if (point == 0) {
