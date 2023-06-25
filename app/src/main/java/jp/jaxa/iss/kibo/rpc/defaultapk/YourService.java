@@ -76,11 +76,7 @@ public class YourService extends KiboRpcService {
         Log.i(TAG, "finish init");
 
         start();
-
-//        goToPoint1();
-
-        handleTarget(1);
-
+        MainRun();
         api.reportMissionCompletion("Mission Complete!");
     }
 
@@ -97,7 +93,28 @@ public class YourService extends KiboRpcService {
         //moveToByShortestPath(mapConfig.Point1, mapConfig.Point2);
 
     }
-    private void moveToShortestAvailablePoint(){
+
+    private void MainRun(){
+        while(true){
+            Integer point = moveToShortestAvailablePoint();
+            if(point == 0){
+                QRCodeDown = true;
+            }
+            else if(point == 8){
+                handleGoal();
+                break;
+            }
+            else if(point >= 1 && point <= 7){
+                handleTarget(point);
+            }
+            
+            if(getRemainingDistance() < 0.1){
+                break;
+            }
+        }
+    }
+
+    private Integer moveToShortestAvailablePoint(){
         List<Integer> activeTarget = api.getActiveTargets();
         if(!QRCodeDown){
             activeTarget.add(0);
@@ -105,6 +122,7 @@ public class YourService extends KiboRpcService {
         Vector3D currentPosition = new Vector3D(api.getRobotKinematics().getPosition());
         Integer shortestPoint = mapManager.getShortestAvailablePointID(currentPosition, activeTarget);
         moveToFromCurrentPosition(getPointFromID(shortestPoint));
+        return shortestPoint;
     }
 
     private void moveToQRCodePoint(){
@@ -116,6 +134,19 @@ public class YourService extends KiboRpcService {
     private void moveToPointNumber(int pointNumber){
         Transform des = getPointFromID(pointNumber);
         moveToFromCurrentPosition(des);
+    }
+
+    private Double getRemainingDistance(){
+        List<Long> timeList = api.getTimeRemaining();
+        return time2Distance(timeList.get(1));
+    }
+    private Double getActiveTargetRemainingDistance(){
+        List<Long> timeList = api.getTimeRemaining();
+        return time2Distance(timeList.get(0));
+    }
+    private Double time2Distance(Long millisecond){
+        double Velocity = 0.5; // m/s
+        return Velocity * millisecond / 1000;
     }
 
 
@@ -242,5 +273,11 @@ public class YourService extends KiboRpcService {
         api.takeTargetSnapshot(targetNumber);
         Mat image = api.getMatNavCam();
         api.saveMatImage(image, "target_" + targetNumber + "_laser.png");
+    }
+    private void handleQRCode(){
+
+    }
+    private void handleGoal(){
+
     }
 }
