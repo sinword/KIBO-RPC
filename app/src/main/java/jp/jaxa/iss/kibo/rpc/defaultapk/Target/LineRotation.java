@@ -96,14 +96,14 @@ public class LineRotation {
 
         public static double[] convertToRealWorldRotation(double[] rotation, double[] currentOrientation) {
                 Mat rotationMatrix = quaternionToRotationMatrix(currentOrientation);
+
                 Mat rotationAxis = transformVector(rotationMatrix, rotation);
                 double[] rotationAxisInDouble = new double[3];
                 rotationAxisInDouble[0] = rotationAxis.get(0, 0)[0];
                 rotationAxisInDouble[1] = rotationAxis.get(1, 0)[0];
                 rotationAxisInDouble[2] = rotationAxis.get(2, 0)[0];
                 rotationAxisInDouble = normalize(rotationAxisInDouble);
-                double angle = Math.acos(rotation[0]);
-                double halfAngle = angle / 2;
+                double halfAngle = Math.acos(rotation[0]);
                 double sinHalfAngle = Math.sin(halfAngle);
                 double[] realWorldRotation = new double[4];
                 realWorldRotation[0] = Math.cos(halfAngle);
