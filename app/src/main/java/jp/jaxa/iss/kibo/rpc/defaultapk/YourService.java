@@ -66,7 +66,6 @@ public class YourService extends KiboRpcService {
 
         start();
         MainRun();
-        api.reportMissionCompletion("Mission Complete!");
     }
 
     @Override
