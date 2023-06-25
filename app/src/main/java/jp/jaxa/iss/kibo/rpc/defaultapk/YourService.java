@@ -50,7 +50,7 @@ import static org.opencv.core.Core.gemm;
 
 public class YourService extends KiboRpcService {
     private MapConfig mapConfig = new MapConfig();
-    private MapManager mapManager = new MapManager(mapConfig, 0.24f);
+    private MapManager mapManager = new MapManager(mapConfig, 0.12f);
     private boolean QRCodeDown = false;
     private final String TAG = this.getClass().getSimpleName();
     private Config config;
@@ -91,9 +91,9 @@ public class YourService extends KiboRpcService {
 
         start();
 
-        Log.i(TAG, "Move to QRcode point");
-        moveToFromCurrentPosition(mapConfig.Point1);
         Log.i(TAG, "Move to Stable point");
+        moveToFromCurrentPosition(mapConfig.StablePoint);
+        Log.i(TAG, "Move to QRcode point");
         moveToQRCodePoint();
 
         Log.i(TAG, "Handle QRcode");
