@@ -160,7 +160,7 @@ public class YourService extends KiboRpcService {
         Quaternion newOrientation = new Quaternion(closestValues[0], closestValues[1], closestValues[2],
                 closestValues[3]);
         double movement = Integer.MAX_VALUE;
-        while (movement > 3 && loopCount < 3) {
+        while (movement > 0.03 && loopCount < 3) {
             Mat image = api.getMatNavCam();
             double[] vector = TargetManager.calibrateLocation(image, newOrientation);
             double smallest = Math.abs(vector[0]);

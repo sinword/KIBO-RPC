@@ -21,9 +21,12 @@ public class TargetManager {
     private static final String TAG = "TargetManager";
 
     private static void inputPoints(double[] targetPoint, Point3 pos) {
-        targetPoint[0] = pos.z + TargetConfig.NAV_CAM_POSITION[0];
-        targetPoint[1] = pos.x + TargetConfig.NAV_CAM_POSITION[1];
-        targetPoint[2] = pos.y + TargetConfig.NAV_CAM_POSITION[2];
+        // targetPoint[0] = pos.z + TargetConfig.NAV_CAM_POSITION[0];
+        // targetPoint[1] = pos.x + TargetConfig.NAV_CAM_POSITION[1];
+        // targetPoint[2] = pos.y + TargetConfig.NAV_CAM_POSITION[2];
+        targetPoint[0] = pos.z;
+        targetPoint[1] = pos.x;
+        targetPoint[2] = pos.y;
         Log.i(TAG, "Relative to center of kibo in its cords: " + targetPoint[0] + ", " + targetPoint[1] + ", "
                 + targetPoint[2]);
     }
@@ -74,12 +77,7 @@ public class TargetManager {
 
         double[] originalOrientationInDouble = { originalOrientation.getW(), originalOrientation.getX(),
                 originalOrientation.getY(), originalOrientation.getZ() };
-        Mat rotationMatrix = quaternionToRotationMatrix(originalOrientationInDouble);
-        Mat vectorInOriginalSystem = transformVector(rotationMatrix, d);
-        double[] vectorInOriginalSystemArray = new double[3];
-        for (int i = 0; i < 3; i++) {
-            vectorInOriginalSystemArray[i] = vectorInOriginalSystem.get(i, 0)[0];
-        }
+        double[] actualMovement = calculateActualMovement(d, originalOrientationInDouble);
         // // LineRotatoin class will calculate the angle that kibo should turn
         // double[] orientation = calculateNewOrientation(
         // LineRotation.getQuaternion(targetPoint), originalOrientation);F
@@ -88,46 +86,38 @@ public class TargetManager {
         // (float) orientation[3], (float) orientation[0]);
         // Log.i(TAG, "orientation: " + orientationQuaternion.toString());
 
-        return vectorInOriginalSystemArray;
+        return actualMovement;
     }
 
-    public static Mat quaternionToRotationMatrix(double[] orientation) {
-        // Create a 3x3 rotation matrix
-        Mat rotationMatrix = new Mat(3, 3, CvType.CV_64FC1);
+    public static double[] calculateActualMovement(double[] rotatedMovement, double[] orientation) {
+        double w = orientation[0];
+        double x = orientation[1];
+        double y = orientation[2];
+        double z = orientation[3];
 
-        // Convert quaternion to rotation matrix
-        double x = orientation[0];
-        double y = orientation[1];
-        double z = orientation[2];
-        double w = orientation[3];
+        double[][] rotationMatrix = new double[3][3];
 
-        rotationMatrix.put(0, 0, 1 - 2 * (y * y + z * z));
-        rotationMatrix.put(0, 1, 2 * (x * y - z * w));
-        rotationMatrix.put(0, 2, 2 * (x * z + y * w));
+        rotationMatrix[0][0] = 1 - 2 * (y * y + z * z);
+        rotationMatrix[0][1] = 2 * (x * y - w * z);
+        rotationMatrix[0][2] = 2 * (x * z + w * y);
 
-        rotationMatrix.put(1, 0, 2 * (x * y + z * w));
-        rotationMatrix.put(1, 1, 1 - 2 * (x * x + z * z));
-        rotationMatrix.put(1, 2, 2 * (y * z - x * w));
+        rotationMatrix[1][0] = 2 * (x * y + w * z);
+        rotationMatrix[1][1] = 1 - 2 * (x * x + z * z);
+        rotationMatrix[1][2] = 2 * (y * z - w * x);
 
-        rotationMatrix.put(2, 0, 2 * (x * z - y * w));
-        rotationMatrix.put(2, 1, 2 * (y * z + x * w));
-        rotationMatrix.put(2, 2, 1 - 2 * (x * x + y * y));
+        rotationMatrix[2][0] = 2 * (x * z - w * y);
+        rotationMatrix[2][1] = 2 * (y * z + w * x);
+        rotationMatrix[2][2] = 1 - 2 * (x * x + y * y);
 
-        return rotationMatrix;
-    }
+        double[] actualMovement = new double[3];
 
-    public static Mat transformVector(Mat rotationMatrix, double[] vector) {
-        // Create a 3x1 column vector
-        Mat vectorMat = new Mat(3, 1, CvType.CV_64FC1);
-        vectorMat.put(0, 0, vector[0]);
-        vectorMat.put(1, 0, vector[1]);
-        vectorMat.put(2, 0, vector[2]);
+        for (int i = 0; i < 3; i++) {
+            actualMovement[i] = rotationMatrix[i][0] * rotatedMovement[0] +
+                    rotationMatrix[i][1] * rotatedMovement[1] +
+                    rotationMatrix[i][2] * rotatedMovement[2];
+        }
 
-        // Transform the vector by multiplying with the rotation matrix
-        Mat transformedVector = new Mat();
-        gemm(rotationMatrix, vectorMat, 1, new Mat(), 0, transformedVector);
-
-        return transformedVector;
+        return actualMovement;
     }
 
     /*
