@@ -54,6 +54,8 @@ public class YourService extends KiboRpcService {
     private boolean QRCodeDown = false;
     private final String TAG = this.getClass().getSimpleName();
     private Config config;
+    private Map<String, String> QRCodeResultMap = new HashMap<String, String>();
+    private String QRCodeResult = "";
 
     // relative to robot body
 
@@ -82,6 +84,13 @@ public class YourService extends KiboRpcService {
 
     @Override
     protected void runPlan1() {
+        QRCodeResultMap.put("JEM", "STAY_AT_JEM");
+        QRCodeResultMap.put("COLUMBUS", "GO_TO_COLUMBUS");
+        QRCodeResultMap.put("RACK1", "CHECK_RACK_1");
+        QRCodeResultMap.put("ASTROBEE", "I_AM_HERE");
+        QRCodeResultMap.put("INTBALL", "LOOKING_FORWARD_TO_SEE_YOU");
+        QRCodeResultMap.put("BLANK", "NO_PROBLEM");
+
         Log.i(TAG, "Running plan 1");
 
         config = new Config();
@@ -115,7 +124,8 @@ public class YourService extends KiboRpcService {
                 QRCodeDown = true;
             }
             else if(point == 8){
-                // handleGoal();
+                api.notifyGoingToGoal();
+                handleGoal();
                 break;
             }
             else if(point >= 1 && point <= 7){
@@ -126,6 +136,12 @@ public class YourService extends KiboRpcService {
                 break;
             }
         }
+    }
+    private void handleGoal(){
+        if (!QRCOdeDown){
+            Log.i(TAG, "No QRCode detected");
+        }
+        api.reportMissionCompletion(QRCodeResultMap.get(QRCodeResult));
     }
 
     private Integer moveToShortestAvailablePoint(){
